@@ -354,10 +354,10 @@ def flow_aufwaermen(ctx):
     pg.click('#tabs >> text=Training'); pg.wait_for_timeout(600)
     r = pg.evaluate("""(()=>{const all=Object.values(S.wos).sort((a,b)=>a.day<b.day?-1:1);const w=all.at(-1);
       const g=computeGame(S.me,[],all,[],[]), g2=computeGame(S.me,[],all.map(x=>({...x,data:{...x.data,exercises:x.data.exercises.map(e=>({...e,sets:e.sets.filter(s=>!s.warm)}))}})),[],[]);
-      return {warm:w.data.exercises[0].sets.filter(s=>s.warm).length, vol:woVolume(w), pr:prCounts(all)[w.id], xp:g.xp===g2.xp&&g.prs===g2.prs}})()""")
+      return {warm:w.data.exercises[0].sets.filter(s=>s.warm).length, vol:woVolume(w), pr:prCounts(all)[w.id]-prCounts(all.map(x=>({...x,data:{...x.data,exercises:x.data.exercises.map(e=>({...e,sets:e.sets.filter(s=>!s.warm)}))}})))[w.id], xp:g.xp===g2.xp&&g.prs===g2.prs}})()""")
     check(r['warm'] == 1, 'Aufwärmsatz gespeichert als warm: true')
     check(r['vol'] == 2076, 'Aufwärmen nicht im Volumen')  # 4 × 86,5 kg × 6
-    check(r['pr'] == 0, 'Aufwärmen kein Bestwert')
+    check(r['pr'] == 0, 'Aufwärmen ändert Bestwerte nicht')
     check(r['xp'], 'Aufwärmen ändert XP nicht')
     pg.click('.lhead >> text=Fortschritt'); pg.wait_for_timeout(600)
     check('200' not in pg.inner_text('#sheetBody'), 'Aufwärmen nicht im Übungsfortschritt')
@@ -425,6 +425,41 @@ def flow_satz_loeschen(ctx):
     pg.click('.setrow.warm .sn'); pg.click('#act >> text=Abbrechen'); pg.wait_for_timeout(100)
     check(not pg.is_visible('#act .actcard') and pg.query_selector('.setrow.warm') is not None, 'Abbrechen schließt das Menü')
     pg.evaluate("commitUndo(); clearDraft(); closeSheet()"); return pg
+
+def flow_fortschritt(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("""(async()=>{
+      await add('workout', addDays(today(),-10), {name:'Basis', exercises:[{name:'Kniebeuge',sets:[{kg:85,reps:5}]},{name:'Klimmzüge',sets:[{kg:0,reps:8}]}]});
+      await add('workout', today(), {name:'Test A', dauer_min:52, exercises:[
+        {name:'Kniebeuge',sets:[{kg:100,reps:5,warm:true},{kg:80,reps:5},{kg:87.5,reps:5}]},
+        {name:'Bankdrücken',sets:[{kg:84,reps:10}]}, {name:'Klimmzüge',sets:[{kg:0,reps:9}]},
+        {name:'Rudern am Kabel',sets:[{kg:55,reps:10}]}, {name:'Seitheben',sets:[{kg:10,reps:14}]}]});
+    })()"""); pg.wait_for_timeout(300)
+    pg.click('#tabs >> text=Training'); pg.wait_for_timeout(600)
+    row = pg.query_selector('.trow2 >> text=Test A')
+    check(row is not None and '3 Bestwerte' in pg.inner_text('.trow2 >> nth=0'), 'Übersicht: „3 Bestwerte“ nach gleicher Regel')
+    pg.click('.trow2 >> nth=0'); pg.wait_for_timeout(700); shot(pg, 'einheit_detail')
+    check(pg.inner_text('.wbn') == '3' and 'Übungen verbessert' in pg.inner_text('#sheetBody .board'), 'Detail: 3 Übungen verbessert')
+    tags = pg.eval_on_selector_all('#sheetBody .board .tag', 'els => els.map(e => e.textContent)')
+    check(tags == ['+2,5 kg', '+2 Wdh.', '+1 Wdh.'], 'Detail: Schilder +2,5 kg, +2 Wdh., +1 Wdh. (Aufwärmsatz ignoriert)')
+    check('85 kg × 5 → 87,5 kg × 5' in pg.inner_text('#sheetBody .board') and '8 Wdh. → 9 Wdh.' in pg.inner_text('#sheetBody .board'), 'Detail: vorher → nachher, Körpergewicht nur Wdh.')
+    check('52 min' in pg.inner_text('#sheetBody'), 'Detail: Dauer')
+    check(pg.inner_text('.wstats .num >> nth=1') == '6', 'Detail: Sätze ohne Aufwärmsatz')
+    check(len(pg.query_selector_all('.list .tag.soft')) == 3 and pg.query_selector('.wex >> text=Seitheben') is not None, 'Liste: alle Übungen, erste Einheit (Seitheben) ohne Schild')
+    pg.click('.wex >> nth=0'); pg.wait_for_timeout(100)
+    check(pg.is_visible('.wex >> nth=0 >> .wchips') and 'W 100×5' in pg.inner_text('.wex >> nth=0 >> .wchips'), 'Tipp klappt Sätze als Chips auf')
+    close(pg)
+    first = pg.evaluate("Object.values(S.wos).filter(w=>w.data.name==='Oberkörper A').sort((a,b)=>a.day<b.day?-1:1)[0].id")
+    pg.evaluate(f"openWo('{first}')"); pg.wait_for_timeout(600)
+    check('Diesmal kein neuer Bestwert' in pg.inner_text('#sheetBody .board'), 'Erste Einheit: kein Bestwert')
+    close(pg)
+    second = pg.evaluate("Object.values(S.wos).filter(w=>w.data.name==='Oberkörper A').sort((a,b)=>a.day<b.day?-1:1)[1].id")
+    pg.evaluate(f"openWo('{second}')"); pg.wait_for_timeout(600)
+    check(pg.inner_text('.wbn') == '1' and 'Übung verbessert' in pg.inner_text('#sheetBody .board'), 'Eine Verbesserung: „Übung verbessert“')
+    close(pg)
+    pg.evaluate("startWorkout('r1')"); pg.wait_for_timeout(500); pg.click('.chk >> nth=0'); pg.evaluate('stopRest()'); pg.click('.wsave'); pg.wait_for_timeout(600)
+    check(pg.evaluate("Object.values(S.wos).some(w=>w.data.dauer_min>=1)") or pg.evaluate("(async()=>{const a=await q('workout',S.user.id,null,null);return a.some(w=>w.data.dauer_min>=1&&w.data.name==='Oberkörper A')})()"), 'Dauer wird gespeichert')
+    return pg
 
 def flow_ziel(ctx):
     pg = open_app(ctx)
@@ -619,7 +654,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():

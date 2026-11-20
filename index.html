@@ -246,6 +246,27 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .trow2 .t{font-weight:900;font-stretch:112%}
 .best{color:var(--mine);font-weight:800}
 
+/* Einheit-Detail */
+.wtitle{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.wbest{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.wbn{font-size:72px;line-height:.8}
+.wbt{font-size:20px;font-weight:900;font-stretch:112%;margin-top:4px}
+.wup{display:flex;align-items:center;gap:12px;padding:8px 0}
+.wup .grow{flex:1;min-width:0}
+.wun{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wus{font-size:12px;color:var(--board-muted)}
+.tag{flex:none;display:inline-flex;align-items:center;gap:4px;background:var(--accent);color:var(--on-accent);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:900;white-space:nowrap}
+.tag.soft{background:var(--hint);color:var(--ink)}
+.tag.soft svg{color:var(--mine)}
+.wnone{margin:0 0 16px;font-weight:800}
+.wstats{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,.8fr) minmax(0,1.2fr);gap:12px}
+.wstats .num{display:block;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:24px}
+.wex{min-height:60px;align-items:flex-start;padding-top:12px;padding-bottom:12px}
+.wchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.wchips[hidden]{display:none}
+.wchip{background:var(--soft);border-radius:var(--r-sm);padding:2px 8px;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+.wchip.warm{color:var(--muted)}
+
 /* Abschnitte & Listen */
 .sec{margin:24px 0 8px}
 .sec-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
@@ -1975,19 +1996,10 @@ function nextRoutine(routines, wos){
 }
 const I_PLAY = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor"/></svg>';
 // Bestwerte je Einheit wie im Level-System: geschätztes 1RM über dem bisherigen Bestwert der Übung
-function prCounts(wos){
-  const best = {}, out = {};
-  wos.forEach(w => { let pr = 0;
-    (w.data.exercises || []).forEach(e => { const k = (e.name || '').toLowerCase().trim();
-      const top = Math.max(0, ...e.sets.filter(isWork).map(s => num(s.kg) * (1 + num(s.reps) / 30))); if (!k || top <= 0) return;
-      if (best[k] !== undefined && top > best[k] + 0.01) pr++; best[k] = Math.max(best[k] ?? 0, top); });
-    out[w.id] = Math.min(pr, 3); });
-  return out;
-}
 async function rTraining(){
   const uid = viewId(), mine = own();
   if (!mine && !shares(S.partner, 'training')) return privNote('das Training');
-  const [routines, wos, kd] = await Promise.all([ q('routine', uid), q('workout', uid, addDays(S.day, -180), S.day), S.partner ? kudosFor(mine ? S.partner.id : S.user.id, addDays(S.day, -42), S.day) : [] ]);
+  const [routines, wos, kd] = await Promise.all([ q('routine', uid), q('workout', uid, null, S.day), S.partner ? kudosFor(mine ? S.partner.id : S.user.id, addDays(S.day, -42), S.day) : [] ]);
   S.rt = {}; routines.forEach(r => S.rt[r.id] = r);
   S.wos = Object.fromEntries(wos.map(w => [w.id, w])); S.kd = kd;
   if (mine){ const seen = new Set(); S.exNames = []; [...routines.flatMap(r => r.data.exercises.map(e => e.name)), ...wos.slice().reverse().flatMap(w => w.data.exercises.map(e => e.name))].forEach(n => { const k = n.toLowerCase(); if (!seen.has(k)){ seen.add(k); S.exNames.push(n); } }); }
@@ -2024,15 +2036,51 @@ function openOther(){
     <div class="list">${list.map(r => `<button class="row tap" onclick="closeSheet();startWorkout('${r.id}')"><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${exN(r.data.exercises.length)} · ca.&nbsp;${estMinutes(r)}&nbsp;min</div></div><span class="chev">${CHEV}</span></button>`).join('')}
     <button class="row tap" onclick="closeSheet();startWorkout()"><div class="grow"><div class="t">Freies Training</div><div class="s">Übungen während des Trainings hinzufügen</div></div><span class="chev">${CHEV}</span></button></div>`);
 }
-function openWo(id){
-  const w = S.wos?.[id]; if (!w) return; const mine = w.user_id === S.user.id, kd = S.kd || [];
-  openSheet(`<div class="sh-head"><h3>${esc(w.data.name)}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
-    <p class="small muted" style="margin-top:0">${dayLabel(w.day)} · ${fmt(woVolume(w))} kg Volumen</p>
-    <div class="list">${w.data.exercises.map(e => `<div class="row"><div class="grow"><div class="t">${esc(e.name)}</div><div class="s">${e.sets.map(s => `${s.warm ? 'W ' : ''}${fmt1(num(s.kg)).replace(',0', '')} × ${s.reps}`).join(' · ')}</div></div></div>`).join('')}</div>
+// Fortschritt pro Übung. „Verbessert“: bester Arbeitssatz hat mehr kg als der bisher beste Satz der Übung,
+// bei gleichem Gewicht mehr Wdh. Körpergewicht (alle Arbeitssätze 0 kg): nur Wdh. Aufwärmsätze zählen nicht,
+// die erste Einheit einer Übung zählt nicht als Verbesserung. wos müssen nach Tag sortiert sein.
+const bestOf = sets => sets.filter(s => isWork(s) && num(s.reps)).reduce((a, s) => !a || num(s.kg) > num(a.kg) || (num(s.kg) === num(a.kg) && num(s.reps) > num(a.reps)) ? s : a, null);
+const kgS = v => fmt1(num(v)).replace(',0', '');
+const setTxt = (s, bw) => bw ? `${s.reps} Wdh.` : `${kgS(s.kg)} kg × ${s.reps}`;
+function woProgress(wos){
+  const best = {}, out = {};
+  wos.forEach(w => {
+    out[w.id] = (w.data.exercises || []).map(e => {
+      const k = (e.name || '').toLowerCase().trim(), b = bestOf(e.sets || []), prev = best[k];
+      const bw = !!b && e.sets.filter(isWork).every(s => !num(s.kg));
+      let up = null;
+      if (b && prev){
+        if (bw && !num(prev.kg)){ if (num(b.reps) > num(prev.reps)) up = { from: prev, to: b, label: `+${num(b.reps) - num(prev.reps)} Wdh.` }; }
+        else if (num(b.kg) > num(prev.kg)) up = { from: prev, to: b, label: `+${kgS(num(b.kg) - num(prev.kg))} kg` };
+        else if (num(b.kg) === num(prev.kg) && num(b.reps) > num(prev.reps)) up = { from: prev, to: b, label: `+${num(b.reps) - num(prev.reps)} Wdh.` };
+      }
+      if (k && b && (!prev || num(b.kg) > num(prev.kg) || (num(b.kg) === num(prev.kg) && num(b.reps) > num(prev.reps)))) best[k] = b;
+      return { e, best: b, bw, up, vol: e.sets.filter(isWork).reduce((a, s) => a + num(s.kg) * num(s.reps), 0) };
+    });
+  });
+  return out;
+}
+// Für die Übersicht „Letzte Einheiten“: Anzahl verbesserter Übungen je Einheit (gleiche Regel wie im Detail)
+function prCounts(wos){ const p = woProgress(wos); return Object.fromEntries(Object.entries(p).map(([id, x]) => [id, x.filter(r => r.up).length])); }
+const openWo = run(async id => {
+  const w0 = S.wos?.[id]; if (!w0) return;
+  const all = await q('workout', w0.user_id, null, null), w = all.find(x => x.id === id) || w0, mine = w.user_id === S.user.id, kd = S.kd || [];
+  const rows = woProgress(all)[w.id] || woProgress([w])[w.id], ups = rows.filter(r => r.up);
+  const nSets = (w.data.exercises || []).reduce((a, e) => a + e.sets.filter(isWork).length, 0), dur = num(w.data.dauer_min);
+  const stats = `<div class="wstats"><div><div class="lbl">Volumen</div><b class="num n28">${fmt(woVolume(w))} kg</b></div><div><div class="lbl">Sätze</div><b class="num n28">${nSets}</b></div><div><div class="lbl">Dauer</div><b class="num n28">${dur ? dur + ' min' : '–'}</b></div></div>`;
+  openSheet(`<div class="whead"><h3 class="wname wtitle">${esc(w.data.name)}</h3><button class="tbtn" onclick="closeSheet()">Schließen</button></div>
+    <p class="small muted" style="margin:0 0 16px">${dayLabel(w.day)}${dur ? ` · ${dur} min` : ''}</p>
+    <div class="board">${ups.length ? `<div class="wbest"><b class="num wbn">${ups.length}</b><div><div class="lbl">Bestwerte</div><div class="wbt">${ups.length === 1 ? 'Übung verbessert' : 'Übungen verbessert'}</div></div></div>
+      ${ups.map(r => `<div class="wup"><div class="grow"><div class="wun">${esc(r.e.name)}</div><div class="wus">${setTxt(r.up.from, r.bw)} → ${setTxt(r.up.to, r.bw)}</div></div><span class="tag">${r.up.label}</span></div>`).join('')}<hr>`
+      : '<p class="wnone">Diesmal kein neuer Bestwert</p>'}${stats}</div>
+    <div class="list" style="margin-top:12px">${rows.map((r, k) => `<button class="row tap wex" id="wx${k}" aria-expanded="false" onclick="woToggle(${k})"><div class="grow"><div class="t">${esc(r.e.name)}</div><div class="s">${r.best ? `Bester Satz ${setTxt(r.best, r.bw)}${r.bw ? '' : ' · ' + fmt(r.vol) + ' kg'}` : 'Keine Arbeitssätze'}</div>
+      <div class="chips wchips" hidden>${r.e.sets.map(s => `<span class="wchip ${s.warm ? 'warm' : ''}">${s.warm ? 'W ' : ''}${num(s.kg) ? kgS(s.kg) + '×' : ''}${s.reps}${num(s.kg) ? '' : ' Wdh.'}</span>`).join('')}</div></div>
+      ${r.up ? `<span class="tag soft"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>${r.up.label}</span>` : ''}</button>`).join('')}</div>
     ${w.data.note ? `<div class="note" style="margin-top:12px">${esc(w.data.note)}</div>` : ''}
     ${mine && kd.some(k => k.data.key === 'wo:' + w.id) ? `<div class="kudosin">${KUDOS_ICON}<span>Kudos von <b>${esc(nameOf(S.partner))}</b></span></div>` : ''}
     <div class="btns">${mine ? `<button class="btn line full" onclick="editWorkout('${w.id}')">Bearbeiten</button>` : kudosBtn('wo:' + w.id, w.day, kd.some(k => k.data.key === 'wo:' + w.id), w.data.name)}</div>`);
-}
+});
+function woToggle(k){ const b = $('#wx' + k), c = b.querySelector('.wchips'), o = c.hidden; c.hidden = !o; b.setAttribute('aria-expanded', o); }
 /* ---------- Übungsbibliothek ---------- */
 const EX_LIB = {
   'Brust': [['Bankdrücken','Langhantel'],['Schrägbankdrücken','Kurzhantel'],['Kurzhantel-Bankdrücken','Kurzhantel'],['Brustpresse','Maschine'],['Dips','Körpergewicht'],['Butterfly','Maschine'],['Cable Crossover','Kabelzug'],['Liegestütze','Körpergewicht']],
@@ -2304,7 +2352,8 @@ const saveWorkout = run(async () => {
   const exercises = pack(keep), all = pack(s => keep(s) || num(s.reps));
   const skipped = all.reduce((a, e) => a + e.sets.length, 0) - exercises.reduce((a, e) => a + e.sets.length, 0);
   if (!exercises.length) return toast(skipped ? 'Hake mindestens einen Satz ab' : 'Trag mindestens einen Satz mit Wiederholungen ein');
-  const base = { name: W.name.trim() || 'Training', routine_id: W.routine_id || null, note: (W.note || '').trim() };
+  const base = { name: W.name.trim() || 'Training', routine_id: W.routine_id || null, note: (W.note || '').trim(),
+    ...(W.start && !W.id ? { dauer_min: Math.max(1, Math.round((Date.now() - W.start) / 60000)) } : W.dauer_min ? { dauer_min: W.dauer_min } : {}) };
   let id = W.id;
   if (W.id) await upd(W.id, { ...base, exercises }); else id = (await add('workout', W.day, { ...base, exercises })).id;
   stopRest(); clearDraft(); closeSheet(); toast(navigator.onLine ? 'Einheit gespeichert' : 'Offline gespeichert, wird später hochgeladen'); render();
