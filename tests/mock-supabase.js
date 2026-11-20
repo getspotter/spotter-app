@@ -21,6 +21,17 @@
   DB.entries.push({id:'r1',user_id:uid,kind:'routine',day:null,data:{name:'Oberkörper A',exercises:[{name:'Bankdrücken',sets:4,reps:'6-8'},{name:'Rudern am Kabel',sets:3,reps:'10-12'}]},created_at:'0'});
   DB.entries.push({id:'rc1',user_id:uid,kind:'recipe',day:null,data:{name:'Skyr-Bowl',slot:'fruehstueck',items:[{name:'Skyr',grams:300,per:{kcal:63,p:11,c:4,f:0.2}}],days:[0,1,2,3,4,5,6],factor:1},created_at:'0'});
   const wosP=DB.entries.filter(e=>e.user_id===pid&&e.kind==='workout'); DB.entries.push({id:id(),user_id:pid,kind:'kudos',day:ad(0),data:{key:'day:'+ad(0),to:uid},created_at:'x'});
+  // Einkaufsliste: Einträge beider Personen, Status als shopcheck je Person und Eintrag (neuester zählt)
+  const T0=Date.now();
+  DB.entries.push({id:'si1',user_id:uid,kind:'shopitem',day:null,data:{name:'Paprika',menge:2,einheit:'Stück',abteilung:'Obst & Gemüse',quelle:{id:'chili-pute',name:'Chili con Carne',portionen:4}},created_at:'1'});
+  DB.entries.push({id:'si2',user_id:uid,kind:'shopitem',day:null,data:{name:'Kartoffeln',menge:500,einheit:'g',abteilung:'Obst & Gemüse',quelle:{id:'ofenlachs',name:'Ofenlachs',portionen:2}},created_at:'1'});
+  DB.entries.push({id:'si3',user_id:pid,kind:'shopitem',day:null,data:{name:'Brokkoli',menge:1,einheit:'Kopf',abteilung:'Obst & Gemüse',quelle:{id:'ofenlachs',name:'Ofenlachs',portionen:2}},created_at:'1'});
+  DB.entries.push({id:'si4',user_id:pid,kind:'shopitem',day:null,data:{name:'Paprika',menge:1,einheit:'Stück',abteilung:'Obst & Gemüse'},created_at:'1'});
+  DB.entries.push({id:'sc1',user_id:uid,kind:'shopcheck',day:null,data:{item_id:'si2',status:'erledigt',at:new Date(T0-60000).toISOString()},created_at:'2'});
+  DB.entries.push({id:'sc2',user_id:pid,kind:'shopcheck',day:null,data:{item_id:'si3',status:'erledigt',at:new Date(T0-30000).toISOString()},created_at:'2'});
+  // Für Tests: Zeile als Partner schreiben (simuliert das zweite iPhone)
+  window.mockAsPartner=row=>{ const r={id:id(),user_id:pid,day:null,created_at:new Date().toISOString(),...row}; DB.entries.push(r); return r.id; };
+  window.mockUpdate=(rid,data)=>{ const r=DB.entries.find(x=>x.id===rid); if(r) r.data=data; };
   // ===== QUERY-BUILDER (nachgebildete Supabase-Methoden) =====
   function B(table){ this.t=table; this.f=[]; this.op='select'; this.one=false; this.maybe=false; this.rng=null; }
   B.prototype.select=function(){ if(this.op==='insert') this.ret=true; return this };

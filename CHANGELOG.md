@@ -5,6 +5,7 @@
 - Training: Fortschritt pro Übung – Detail einer Einheit mit „Übungen verbessert“ (mehr kg, bei gleichem Gewicht mehr Wdh., Körpergewicht nur Wdh., erste Einheit zählt nicht, ohne Aufwärmsätze), Satz-Chips, Dauer; „Bestwerte“ in der Übersicht nach derselben Regel; Dauer wird gespeichert (dauer_min)
 - Suche: Open Food Facts auf Deutschland eingegrenzt und nach Beliebtheit sortiert, 20 Treffer, nur nötige Felder; eigene und zuletzt genutzte zuerst; Eingabe entprellt (300 ms), laufende Anfrage wird abgebrochen, Zeitlimit 6 s mit Hinweis
 - Rezepte: Sammlung mit 12 Rezepten (Filter, Protein pro Portion), Rezeptansicht mit Portionen-Stepper und skalierten Mengen, „1 Portion eintragen“ über das Mengen-Sheet, „In meine Rezepte“ (Kopie pro Portion); bisherige Vorlagen heißen jetzt „Meine Rezepte“; offline über den Service Worker
+- Einkaufsliste: gemeinsam für beide, nach Abteilungen, gleiche Zutaten zusammengerechnet, wer was abgehakt hat, Rezepte mit gewählter Portionenzahl übernehmen, freie Einträge, „Erledigte entfernen“ und „Liste leeren“ mit Rückgängig, offline über die Warteschlange; Zugang über Sammlung, Rezept und Essen-Kopf
 
 ## 1.6.1.1 – 18.10.2026
 - Einheit: Tipp auf die Satznummer („W“, „1“, „2“ …, 44 × 44 px) öffnet ein Menü mit „Satz löschen“, danach „Satz gelöscht“ mit Rückgängig; Nummern rücken nach

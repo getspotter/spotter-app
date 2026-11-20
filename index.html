@@ -20,7 +20,7 @@
 :root{
   --bg:#F2F3F0;--surface:#FFFFFF;--soft:#E6E8E4;--line:#DCDFDA;--ink:#15181C;--muted:#58606A;
   --accent:#FFB81C;--on-accent:#15181C;--mine:#C98200;--partner:#0A84C6;--warn:#C0341D;--ok:#1E8A4C;
-  --board:#15181C;--board-soft:#2E343B;--partner-bg:#E3F1FA;--hint:#FFF1CC;--pad:#FFFFFF;--board-ink:#F2F3F0;--board-muted:#A2AAB2;
+  --board:#15181C;--board-soft:#2E343B;--partner-bg:#E3F1FA;--hint:#FFF1CC;--pad:#FFFFFF;--board-ink:#F2F3F0;--board-muted:#A2AAB2;--partner-fill:#076A9F;
   --r-board:24px;--r-card:20px;--r-btn:14px;--r-sm:10px;
   --f:'Archivo',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
   color-scheme:light;
@@ -297,6 +297,29 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .rzsteps li{padding-left:4px}
 .rzbar .btn.accent{flex:1}
 .rzbar #rzshop:empty{display:none}
+
+/* Einkaufsliste */
+.hbtn.icon{width:44px;padding:0;justify-content:center}
+.cbadge{min-width:22px;height:22px;border-radius:11px;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.hbtn.icon .cbadge{position:absolute;top:-4px;right:-4px}
+#rzfoot{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:16px 0 calc(-24px - env(safe-area-inset-bottom,0px));z-index:2}
+.rzfoot{padding:8px 0 calc(16px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%)}
+.shopbtn{background:var(--surface);color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.12);gap:12px}
+.shtitle{font-size:36px;margin:0 0 8px}
+.shmeta{margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.shadd{margin-top:12px}
+.shadd input{min-height:52px}
+.shplus{width:52px;min-height:52px;padding:0;flex:none}
+.shrow{display:flex;align-items:center;gap:12px;min-height:50px;padding:8px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.shrow:last-child{border-bottom:0}
+.shbox{flex:none;width:28px;height:28px;border-radius:8px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--on-accent)}
+.shrow.done .shbox{background:var(--accent);border-color:var(--accent)}
+.shn{flex:1;min-width:0;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shrow.done .shn{text-decoration:line-through;color:var(--muted)}
+.shq{flex:none;color:var(--muted);font-size:15px;white-space:nowrap}
+.who{flex:none;min-width:28px;height:28px;border-radius:14px;font-size:12px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.who.me{background:var(--soft);color:var(--ink)}
+.who.pa{background:var(--partner-fill);color:#fff}
 
 /* Abschnitte & Listen */
 .sec{margin:24px 0 8px}
@@ -930,7 +953,7 @@ function renderHeader(){
   $('#lvl').hidden = essen; $('#hact').innerHTML = essen ? headActions() : '';
   if (S.myGame) updateLvl(S.myGame);
 }
-function headActions(){ return `<button class="hbtn" onclick="openRezepte('sammlung')">Rezepte</button>`; }
+function headActions(){ return `<button class="hbtn icon" aria-label="Einkaufsliste${S.shopN ? ', ' + S.shopN + ' offen' : ''}" onclick="openShop()">${I_CART}${shopBadge()}</button><button class="hbtn" onclick="openRezepte('sammlung')">Rezepte</button>`; }
 function longDay(s){ // Versalien per CSS: „FR · 16. OKT“
   const d = new Date(s + 'T12:00:00');
   return (s === addDays(today(), -1) ? 'Gestern' : WD[wd(s)]) + ' · ' + d.getDate() + '. ' + MON[d.getMonth()].replace('.', '');
@@ -1708,6 +1731,7 @@ async function rEssen(){
   }
   h += '</div>';
   if (mine) h += `<div class="list" style="margin-top:12px"><button class="row tap" onclick="openCopy()"><div class="grow"><div class="t">Essen von anderem Tag kopieren</div><div class="s">Ganze Mahlzeiten übernehmen, z. B. von gestern</div></div><span class="chev">${CHEV}</span></button></div>`;
+  if (mine) setTimeout(shopRefreshCount);
   if (mine) h += `<div class="fbar"><button class="fsearch" onclick="openFoodSearch(false)">${I_SEARCH}<span>Lebensmittel suchen</span></button><button class="fscan" aria-label="Barcode scannen" onclick="openFoodSearch(true)">${I_SCAN}</button></div>`;
   return h;
 }
@@ -1751,7 +1775,7 @@ function drawRezepte(){
       : '<div class="note">Noch keine eigenen Rezepte. Lege eins an oder übernimm eins aus der Sammlung.</div>';
   }
   h += '<div id="rzfoot"></div>';
-  openSheet(h); if (typeof rzFoot === 'function') rzFoot();
+  openSheet(h); rzFoot(); shopRefreshCount();
 }
 function drawRezept(id, n){
   const r = RZ.data.rezepte.find(x => x.id === id); if (!r) return;
@@ -1782,6 +1806,107 @@ const rzCopy = run(async id => {
   await add('recipe', null, { name: r.name, slot: r.kategorie === 'fruehstueck' ? 'fruehstueck' : 'abend', items, days: [], factor: 1, quelle: id });
   await loadRecipes(true); toast('In deinen Rezepten gespeichert'); drawRezept(id);
 });
+
+/* ================= Einkaufsliste (gemeinsam) ================= */
+// shopitem  { name, menge, einheit, abteilung, quelle?: { id, name, portionen } } – jede Person schreibt nur eigene
+// shopcheck { item_id, status: 'offen'|'erledigt'|'entfernt', at } – genau einer je Person und Eintrag, wird aktualisiert.
+// Status eines Eintrags = neuester shopcheck (nach at, Zeit des Tipps) beider Personen; wer abgehakt hat = dessen Besitzer.
+// Beide Kinds ohne Freigabe-Kategorie: für den Partner immer sichtbar. Zusammengerechnet wird nur in der Anzeige.
+const ABTEILUNGEN = ['Obst & Gemüse', 'Kühlregal', 'Fleisch & Fisch', 'Brot & Backwaren', 'Trockenware', 'Konserven', 'Tiefkühl', 'Sonstiges'];
+const ABT_WORDS = [['Obst & Gemüse', /apfel|banane|beere|zwiebel|paprika|tomate(?!n.*dose)|gurke|salat|kartoffel|möhre|karotte|brokkoli|zucchini|spinat|pilz|champignon|knoblauch|zitrone|avocado|obst|gemüse/i],
+  ['Kühlregal', /skyr|quark|joghurt|milch|käse|butter|ei(er)?\b|sahne|hüttenkäse|tofu/i], ['Fleisch & Fisch', /hähnchen|pute|hack|rind|schwein|lachs|fisch|thunfisch(?!.*dose)|garnele|fleisch/i],
+  ['Brot & Backwaren', /brot|brötchen|wrap|toast|tortilla/i], ['Tiefkühl', /\btk\b|tiefkühl|eis\b/i], ['Konserven', /dose|konserve|passiert|bohnen|mais|kichererbsen/i],
+  ['Trockenware', /reis|nudel|pasta|hafer|mehl|zucker|öl|linsen|müsli|nüsse|mandel|gewürz|salz|pfeffer/i]];
+function guessAbt(name){
+  const k = name.trim().toLowerCase(), hit = RZ.data?.rezepte.flatMap(r => r.zutaten).find(z => z.name.toLowerCase() === k || z.name.toLowerCase().startsWith(k));
+  if (hit) return hit.abteilung;
+  return (ABT_WORDS.find(([, re]) => re.test(name)) || ['Sonstiges'])[0];
+}
+let SL = { items: [], checks: [], hide: new Set(), over: {} };
+async function shopLoad(){
+  const ids = [S.user.id, S.partner?.id].filter(Boolean);
+  const [items, checks] = await Promise.all([ Promise.all(ids.map(id => q('shopitem', id).catch(() => []))).then(x => x.flat()), Promise.all(ids.map(id => q('shopcheck', id).catch(() => []))).then(x => x.flat()) ]);
+  SL.items = items; SL.checks = checks; SL.over = {};
+}
+function shopStatus(it){
+  if (SL.over[it.id]) return SL.over[it.id];
+  const c = SL.checks.filter(x => x.data.item_id === it.id).sort((a, b) => (a.data.at || '') < (b.data.at || '') ? 1 : -1)[0];
+  return c ? { status: c.data.status, who: c.user_id } : { status: 'offen', who: null };
+}
+// Zeilen der Anzeige: gleiche Zutat + gleiche Einheit zusammengerechnet, getrennt nach offen/erledigt
+function shopRows(){
+  const rows = {};
+  SL.items.filter(it => !SL.hide.has(it.id)).forEach(it => {
+    const st = shopStatus(it); if (st.status === 'entfernt') return;
+    const done = st.status === 'erledigt', key = `${it.data.name.trim().toLowerCase()}|${unitBase(it.data.einheit)}|${done ? 'x' : 'o'}`;
+    const r = rows[key] || (rows[key] = { key, name: it.data.name, unit: unitBase(it.data.einheit), abt: it.data.abteilung || 'Sonstiges', items: [], menge: 0, hasQ: false, done, who: null });
+    r.items.push(it); if (num(it.data.menge)){ r.menge += num(it.data.menge); r.hasQ = true; }
+    if (done && (!r.who || st.who === S.user.id)) r.who = st.who;
+  });
+  return Object.values(rows);
+}
+const shopOpenCount = () => shopRows().filter(r => !r.done).length;
+// Eigenen shopcheck für einen Eintrag anlegen oder aktualisieren (offline über die Warteschlange)
+async function shopSet(it, status){
+  const at = new Date().toISOString(), own = SL.checks.find(c => c.user_id === S.user.id && c.data.item_id === it.id);
+  const data = { item_id: it.id, status, at };
+  if (own){ own.data = data; await upd(own.id, data); }
+  else { const row = await add('shopcheck', null, data); SL.checks.push({ ...row, user_id: S.user.id, data }); }
+}
+const shopToggle = run(async k => {
+  const key = SL.view?.[k]?.key, r = shopRows().find(x => x.key === key); if (!r) return;
+  const st = r.done ? 'offen' : 'erledigt';
+  r.items.forEach(it => SL.over[it.id] = { status: st, who: S.user.id }); drawShop();
+  for (const it of r.items) await shopSet(it, st);
+  r.items.forEach(it => delete SL.over[it.id]);
+});
+const shopAdd = run(async () => {
+  const el = $('#shopq'), name = el.value.trim(); if (!name) return;
+  await add('shopitem', null, { name, menge: null, einheit: '', abteilung: guessAbt(name) });
+  el.value = ''; await shopLoad(); drawShop(); $('#shopq')?.focus();
+});
+// Rezept auf die Liste: Zutaten in der gewählten Portionenzahl
+const shopFromRecipe = run(async (id, n) => {
+  const r = RZ.data.rezepte.find(x => x.id === id), k = n / r.portionen, quelle = { id, name: r.name.split(' mit ')[0], portionen: n };
+  await addMany('shopitem', r.zutaten.map(z => ({ day: null, data: { name: z.name, menge: roundQty(z.menge * k, z.einheit), einheit: unitBase(z.einheit), abteilung: z.abteilung || 'Sonstiges', quelle } })));
+  await shopLoad(); toast(`${r.zutaten.length} Zutaten auf der Einkaufsliste`); renderHeader(); if (typeof rzShopBtn === 'function' && $('#rzshop')) rzShopBtn(id);
+});
+// Erledigte entfernen / Liste leeren: sofort ausgeblendet, nach 5 s eigene Einträge gelöscht, fremde als „entfernt“ markiert
+function shopClear(all){
+  const its = shopRows().filter(r => all || r.done).flatMap(r => r.items); if (!its.length) return toast(all ? 'Die Liste ist schon leer' : 'Nichts erledigt');
+  its.forEach(it => SL.hide.add(it.id)); drawShop();
+  undoBar(all ? 'Liste geleert' : `${its.length} erledigte entfernt`, () => { its.forEach(it => SL.hide.delete(it.id)); drawShop(); }, async () => {
+    for (const it of its){
+      if (it.user_id === S.user.id){ await del(it.id); const c = SL.checks.find(x => x.user_id === S.user.id && x.data.item_id === it.id); if (c) await del(c.id); }
+      else await shopSet(it, 'entfernt');
+      SL.hide.delete(it.id);
+    }
+    await shopLoad(); if ($('#shoplist')) drawShop(); renderHeader();
+  }, 'sheet');
+}
+const openShop = run(async () => { await loadSammlung().catch(() => null); await shopLoad(); drawShop(); });
+function drawShop(){
+  const rows = shopRows(), done = rows.filter(r => r.done).length, P2 = S.partner;
+  const src = {}; rows.filter(r => !r.done).forEach(r => r.items.forEach(it => { const qd = it.data.quelle; if (qd) src[qd.id] = qd; }));
+  const ini = who => who === S.user.id ? '<span class="who me">Du</span>' : `<span class="who pa" aria-label="${esc(nameOf(P2))}">${esc((nameOf(P2) || '?')[0].toUpperCase())}</span>`;
+  const groups = ABTEILUNGEN.map(a => [a, rows.filter(r => (ABTEILUNGEN.includes(r.abt) ? r.abt : 'Sonstiges') === a).sort((x, y) => x.done - y.done)]).filter(g => g[1].length);
+  SL.view = groups.flatMap(g => g[1]); let k = 0;
+  openSheet(`<div class="sh-head rzhead"><button class="iconbtn" aria-label="Weitere Aktionen" onclick="actionMenu('Einkaufsliste',[{label:'Erledigte entfernen',fn:()=>shopClear(false)},{label:'Liste leeren',warn:true,fn:()=>shopClear(true)}])">${I_DOTS}</button><button class="btn sm ghost" onclick="closeSheet();render()">Schließen</button></div>
+    <h2 class="shtitle">Einkaufsliste</h2>
+    <p class="small muted shmeta">${P2 ? `<span class="pdot"></span>Gemeinsam mit ${esc(nameOf(P2).split(' ')[0])} · ` : ''}${done} von ${rows.length} erledigt</p>
+    ${Object.keys(src).length ? `<p class="small muted shmeta">Aus: ${Object.values(src).map(qd => `${esc(qd.name)} (${qd.portionen})`).join(' · ')}</p>` : ''}
+    <div class="searchrow shadd"><input id="shopq" placeholder="Etwas hinzufügen, z. B. Skyr" enterkeyhint="done" onkeydown="if(event.key==='Enter')shopAdd()"><button class="btn shplus" aria-label="Hinzufügen" onclick="shopAdd()">${I_PLUS}</button></div>
+    <div id="shoplist">${groups.length ? groups.map(([a, rs]) => `<div class="lbl" style="margin:16px 4px 8px">${esc(a)}</div><div class="list">${rs.map(r => { const i = k++; return `<div class="shrow ${r.done ? 'done' : ''}" role="checkbox" aria-checked="${r.done}" aria-label="${esc(r.name)}${r.hasQ ? ', ' + qtyTxt(Math.round(r.menge * 2) / 2, r.unit) : ''}" tabindex="0" onclick="shopToggle(${i})" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();shopToggle(${i})}">
+        <span class="shbox">${r.done ? I_CHK : ''}</span><span class="shn">${esc(r.name)}</span><span class="shq">${r.hasQ ? qtyTxt(Math.round(r.menge * 2) / 2, r.unit) : ''}</span>${r.done && r.who ? ini(r.who) : ''}</div>`; }).join('')}</div>`).join('')
+      : '<div class="note" style="margin-top:16px">Die Liste ist leer. Füge oben etwas hinzu oder setze Zutaten aus einem Rezept auf die Liste.</div>'}</div>`);
+  S.shopN = rows.length - done;
+}
+// Zugänge: Button unten in der Sammlung, Button im Rezept, Icon im Essen-Kopf
+const I_CART = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11l2-8H6.2"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></svg>';
+const shopBadge = () => S.shopN ? `<span class="cbadge">${S.shopN}</span>` : '';
+async function shopRefreshCount(){ try { await shopLoad(); S.shopN = shopOpenCount(); } catch (e) {} const h = $('#hact'); if (h && S.tab === 'essen' && own()) h.innerHTML = headActions(); if ($('#rzfoot')) rzFoot(); }
+function rzFoot(){ const el = $('#rzfoot'); if (el) el.innerHTML = `<div class="rzfoot"><button class="btn full big shopbtn" onclick="openShop()">${I_CART}Einkaufsliste${S.shopN ? `<span class="cbadge">${S.shopN}</span>` : ''}</button></div>`; }
+function rzShopBtn(id){ const el = $('#rzshop'); if (el) el.innerHTML = `<button class="btn ghost" onclick="shopFromRecipe('${id}', RZ.cur.n)">Auf Einkaufsliste</button>`; }
 
 /* ---------- Lebensmittel-Auswahl mit Sammelkorb ---------- */
 let P = null;

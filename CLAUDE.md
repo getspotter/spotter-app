@@ -16,13 +16,16 @@ Du arbeitest als Projektleiter und Entwicklungschef zusammen mit dem Nutzer. Er 
 - `docs/design/<version>/`: Entwürfe (je Screen hell/dunkel). Bei Widerspruch zwischen Bild und Auftrag gilt der Auftrag.
 - `tests/`: Rauchtest mit simulierter Supabase (siehe Skill `test`).
 - `BACKLOG.md`: offene Aufgaben, Prioritäten, bewusst Gestrichenes.
+- `daten/rezepte.json`: Rezeptsammlung (nur lesen, im Service Worker vorab gecacht).
 
 Externe Bibliotheken (per `<script>` mit SRI-Prüfsumme, exakt gepinnt): `@supabase/supabase-js@2.45.4` (UMD), `html5-qrcode@2.3.8`. Schrift: Archivo (Google Fonts). Open Food Facts wird direkt aus dem Browser abgefragt.
 
 ## Datenmodell (Supabase)
 - `profiles`: `id`, `display_name`, `invite_code`, `partner_id`, `data` (jsonb: Rechner-Eingaben, `targets`, `share`, `game`-Snapshot, `avatar`, `theme`, `rest`, `restAuto`, `restSound`, …).
-- `entries`: `id`, `user_id`, `kind`, `day`, `data` (jsonb). Kinds: `log`, `recipe`, `food`, `routine`, `workout`, `weight`, `measure`, `kudos`, `mealshare`, `shareack`.
+- `entries`: `id`, `user_id`, `kind`, `day`, `data` (jsonb). Kinds: `log`, `recipe`, `food`, `routine`, `workout`, `weight`, `measure`, `kudos`, `mealshare`, `shareack`, `shopitem`, `shopcheck`.
 - `workout.data.exercises[].sets[]`: `{ kg, reps, warm? }`. `warm: true` = Aufwärmsatz (zählt nicht für Volumen, Bestwerte, XP, Übungsfortschritt; immer über `isWork` filtern). `routine.data.exercises[].reps` = Wiederholungsbereich „6-8“ oder leer (kein Ziel).
+- Einkaufsliste (gemeinsam): `shopitem { name, menge, einheit, abteilung, quelle? }` und `shopcheck { item_id, status: offen|erledigt|entfernt, at }`, genau ein shopcheck je Person und Eintrag (wird aktualisiert). Status = neuester shopcheck nach `at` (Zeit des Tipps), wer abgehakt hat = dessen Besitzer. Beide Kinds **bewusst ohne Freigabe-Kategorie** (für den Partner immer sichtbar). Zusammengerechnet wird nur in der Anzeige; fremde Einträge werden nie geändert, nur per shopcheck „entfernt“.
+- `recipe.data.quelle` = ID aus `daten/rezepte.json`, wenn aus der Sammlung übernommen (Zutaten pro Portion, `factor: 1`). `workout.data.dauer_min` = Dauer der Einheit (ab 1.7).
 - Sichtbarkeit: eigene Daten immer, Partner nur bei gegenseitiger Verknüpfung (`is_partner`) und gemäß Freigaben (`can_view`). Kinds ohne Kategorie sind für den Partner **immer** sichtbar. Details im Skill `datenbank`.
 - Storage-Bucket `avatars` (privat, nur Besitzer + Partner).
 

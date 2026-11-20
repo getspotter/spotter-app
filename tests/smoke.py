@@ -329,6 +329,62 @@ def flow_rezepte(ctx):
     check(pg.query_selector('.row >> text=Chili con Carne') is not None and '0 kcal' not in pg.inner_text('#sheetBody .list .k >> nth=0'), 'Meine Rezepte: Kopie mit Kalorien')
     return pg
 
+def flow_einkauf(ctx):
+    pg = open_app(ctx)
+    pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(800)
+    check(pg.inner_text('#hact .cbadge') == '1', 'Essen-Kopf: Einkaufswagen mit Anzahl offener Einträge')
+    pg.click('#hact [aria-label^="Einkaufsliste"]'); pg.wait_for_timeout(600); shot(pg, 'einkauf')
+    rows = lambda: pg.eval_on_selector_all('.shrow', 'els => els.map(e => [e.querySelector(".shn").textContent, e.querySelector(".shq").textContent, e.getAttribute("aria-checked"), (e.querySelector(".who")||{}).textContent||""])')
+    r = rows()
+    check(r[0][:3] == ['Paprika', '3 Stück', 'false'], 'Gleiche Zutat + Einheit von beiden zusammengerechnet')
+    check(['Kartoffeln', '500 g', 'true', 'Du'] in r and ['Brokkoli', '1 Kopf', 'true', 'L'] in r, 'Wer hat abgehakt: „Du“ bzw. Partner-Kürzel; Erledigte am Gruppenende')
+    check('Gemeinsam mit Lena · 2 von 3 erledigt' in pg.inner_text('#sheetBody'), 'Kopf: gemeinsam, x von y erledigt')
+    pg.click('.shrow >> nth=0'); pg.wait_for_timeout(500)
+    check(all(x[2] == 'true' for x in rows()), 'Abhaken setzt Status für beide zusammengefassten Einträge')
+    # zweites iPhone: Partner hakt Paprika (sein Eintrag) danach wieder auf -> neuester Status zählt
+    pg.evaluate("window.mockAsPartner({kind:'shopcheck', data:{item_id:'si4', status:'offen', at:new Date(Date.now()+5000).toISOString()}})")
+    # ... und einen älteren Haken für Kartoffeln, der gegen meinen neueren verliert
+    pg.evaluate("window.mockAsPartner({kind:'shopcheck', data:{item_id:'si2', status:'offen', at:new Date(Date.now()-3600000).toISOString()}})")
+    close(pg); pg.click('#hact [aria-label^="Einkaufsliste"]'); pg.wait_for_timeout(600)
+    r = rows()
+    check(['Paprika', '1 Stück', 'false', ''] in r and ['Paprika', '2 Stück', 'true', 'Du'] in r, 'Gleichzeitig: neuester Status je Eintrag, Partner hat aufgehakt')
+    check(['Kartoffeln', '500 g', 'true', 'Du'] in r, 'Älterer Haken des Partners verliert gegen neueren')
+    pg.fill('#shopq', 'Skyr'); pg.click('.shplus'); pg.wait_for_timeout(500)
+    check(pg.query_selector('#shoplist >> text=Kühlregal') is not None and ['Skyr', '', 'false', ''] in rows(), 'Freies Feld: Skyr landet im Kühlregal')
+    close(pg)
+    pg.click('#hact >> text=Rezepte'); pg.wait_for_timeout(500)
+    check(pg.query_selector('.shopbtn .cbadge') is not None, 'Sammlung: Button Einkaufsliste mit Anzahl')
+    pg.evaluate("drawRezept('chili-pute')"); pg.wait_for_timeout(200); pg.click('text=Auf Einkaufsliste'); pg.wait_for_timeout(600)
+    check('Zutaten auf der Einkaufsliste' in toast(pg), 'Rezept auf die Einkaufsliste')
+    pg.evaluate("drawRezept('haehnchen-reis-pfanne')"); pg.wait_for_timeout(200); pg.click('text=Auf Einkaufsliste'); pg.wait_for_timeout(600)
+    pg.evaluate("openShop()"); pg.wait_for_timeout(600); shot(pg, 'einkauf_rezepte')
+    r = rows()
+    check(['Paprika', '5 Stück', 'false', ''] in r, 'Zusammenrechnen über alle offenen Einträge (1 + 2 + 2 Stück)')
+    check(['Zwiebel', '3 Stück', 'false', ''] in r and ['Olivenöl', '4 TL', 'false', ''] in r, 'Gleiche Zutaten aus zwei Rezepten zusammengerechnet')
+    check('Aus: Chili con Carne (4) · Hähnchen-Reis-Pfanne (2)' in pg.inner_text('#sheetBody'), 'Kopf: „Aus: …“ mit Portionen')
+    n_open = sum(1 for x in r if x[2] == 'false'); n_all = len(r)
+    pg.click('[aria-label="Weitere Aktionen"]'); pg.click('#act >> text=Erledigte entfernen'); pg.wait_for_timeout(300)
+    check(len(rows()) == n_open and 'erledigte entfernt' in pg.inner_text('#undo'), 'Erledigte entfernen mit Rückgängig-Leiste')
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(200)
+    check(len(rows()) == n_all, 'Rückgängig stellt Erledigte wieder her')
+    pg.click('[aria-label="Weitere Aktionen"]'); pg.click('#act >> text=Erledigte entfernen'); pg.wait_for_timeout(5600)
+    st = pg.evaluate("(async()=>{const ci=await q('shopitem',S.user.id);return {mine:ci.map(i=>i.data.name), chk:(await q('shopcheck',S.user.id)).filter(c=>c.data.status==='entfernt').map(c=>c.data.item_id)}})()")
+    check('Kartoffeln' not in st['mine'] and 'si3' in st['chk'], 'Nach 5 s: eigene gelöscht, Partner-Eintrag als „entfernt“ markiert')
+    # offline abhaken, später synchronisieren
+    ctx.set_offline(True); pg.evaluate("window.dispatchEvent(new Event('offline'))"); pg.wait_for_timeout(200)
+    first = pg.inner_text('.shrow >> nth=0 >> .shn'); row = lambda: f'.shrow:has(.shn:text-is("{first}"))'
+    pg.click('.shrow >> nth=0'); pg.wait_for_timeout(400)
+    check(pg.evaluate("QUEUE.length") >= 1 and pg.get_attribute(row(), 'aria-checked') == 'true', 'Offline abhaken landet in der Warteschlange')
+    ctx.set_offline(False); pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(1500)
+    check(pg.evaluate("QUEUE.length") == 0, 'Online: Warteschlange synchronisiert')
+    close(pg); pg.evaluate("openShop()"); pg.wait_for_timeout(600)
+    check(pg.get_attribute(row(), 'aria-checked') == 'true', 'Nach Sync und neuem Öffnen weiter abgehakt')
+    pg.click('[aria-label="Weitere Aktionen"]'); pg.click('#act >> text=Liste leeren'); pg.wait_for_timeout(300)
+    check(len(rows()) == 0 and 'Liste geleert' in pg.inner_text('#undo'), 'Liste leeren mit Rückgängig')
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(200)
+    check(len(rows()) > 0, 'Liste wiederhergestellt')
+    return pg
+
 def flow_essen_teilen(ctx):
     pg = open_app(ctx)
     check(pg.query_selector('.sharein') is not None, 'Geschickte Mahlzeit erscheint')
@@ -667,6 +723,7 @@ def flow_umbruch(ctx):
       ('kalender', "S.tab='heute';S.day=today();render().then(()=>openCalendar())"), ('zahlenfeld', "startWorkout('r1').then(()=>setTimeout(()=>npSet(0,0,'kg'),300))"),
       ('menge', "openPicker({mode:'log',slot:'mittag',title:'Mittagessen'}).then(()=>drawAmount(1))"), ('gewicht', "S.tab='koerper';render().then(()=>openWeight())"),
       ('masse', "openMeasure()"), ('rezepte', "S.tab='essen';render().then(()=>openRezepte('sammlung'))"), ('rezept', "openRezepte('sammlung').then(()=>drawRezept('chili-pute'))"),
+      ('einkauf', "S.tab='essen';render().then(()=>loadSammlung()).then(()=>shopFromRecipe('chili-pute',4)).then(()=>openShop())"),
       ('einheit_fortschritt', "S.tab='training';render().then(()=>openWo(Object.keys(S.wos).at(-1)))"), ('rueckgaengig', "S.tab='essen';render().then(()=>undoBar('Hähnchen-Reis-Bowl mit Gemüse gelöscht',null,null))")]
     pg.evaluate("S.day=addDays(today(),-3);S.tab='heute';render()"); pg.wait_for_timeout(500)
     check('Ganzkörper A' in pg.inner_text('.tile .tname'), 'Kachel zeigt langen Trainingsnamen')
@@ -718,7 +775,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():
