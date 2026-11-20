@@ -298,6 +298,10 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .rzbar .btn.accent{flex:1}
 .rzbar #rzshop:empty{display:none}
 
+/* Was ist neu */
+.clhot{margin-top:16px;background:var(--surface);border-radius:var(--r-card);padding:16px}
+.clhot ul{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:15px}
+
 /* Einkaufsliste */
 .actcard.ovl{max-height:88vh;overflow:auto;gap:0;padding-bottom:0}
 .selhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
@@ -1276,20 +1280,32 @@ const setTheme = run(async t => { applyTheme(t); await saveProfile({ theme: t })
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(S.me?.data?.theme || localStorage.getItem('theme'))); } catch (e) {}
 
 /* ================= Version & Neuigkeiten ================= */
-const APP_VERSION = '1.7';
+const APP_VERSION = '1.7.1';
+const FEATURE_VERSION = '1.7';   // Version, deren Neuerungen in CHANGELOG stehen
+const HOTFIX = ['Zutaten vor dem Übernehmen abwählen, was du schon zu Hause hast.', 'Einträge auf der Einkaufsliste ändern und löschen.', 'Änderungen gelten für euch beide.'];
 const CHANGELOG = [
   ['Rezeptsammlung', 'Unter Essen → Rezepte findest du 12 Rezepte mit viel Protein. Portionen anpassen, Mengen rechnen sich mit, eine Portion trägst du mit einem Tipp ein oder übernimmst das Rezept in deine eigenen.'],
   ['Gemeinsame Einkaufsliste', 'Setze Zutaten mit einem Tipp auf die Liste. Ihr seht beide dieselbe Liste, gleiche Zutaten werden zusammengerechnet und ihr seht, wer was schon eingepackt hat. Funktioniert auch offline.'],
   ['Fortschritt pro Übung', 'Öffne eine Einheit unter Training: Du siehst, bei welchen Übungen du dich verbessert hast, mit „vorher → jetzt“.'],
   ['Bessere Lebensmittelsuche', 'Deine Lebensmittel stehen zuerst, danach beliebte Produkte aus Deutschland. Die Suche reagiert schneller und sagt Bescheid, wenn die Datenbank nicht antwortet.']
 ];
-function openChangelog(){
-  openSheet(`<div class="sh-head"><h3>Neu in Spotter ${APP_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>
-    <div class="list">${CHANGELOG.map(([t, d]) => `<div class="row" style="align-items:flex-start"><span class="okdot" style="margin-top:2px">✓</span><div class="grow"><div class="t">${t}</div><div class="s">${d}</div></div></div>`).join('')}</div>
-    <div class="btns"><button class="btn accent full" onclick="closeChangelog()">Los geht's</button></div>`);
+// „Was ist neu“: zuletzt gesehen pro Person (Browser-Speicher, Schlüssel mit Nutzer-ID; alter Gerätewert als Startwert).
+// Vor 1.7 oder unbekannt: 1.7-Neuerungen + Abschnitt „Hotfix 1.7.1“. Genau 1.7: nur „Kleines Update“. Schon das Anzeigen zählt als gesehen.
+const vcmp = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < Math.max(x.length, y.length); i++){ const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; };
+const seenKey = () => 'seenVersion:' + (S.user?.id || '');
+function seenVersion(){ return getLS(seenKey(), '') || getLS('seenVersion', ''); }
+function openChangelog(mode = 'full'){
+  setLS(seenKey(), APP_VERSION); setLS('seenVersion', APP_VERSION);
+  const hot = `<div class="clhot"><div class="lbl">Hotfix ${APP_VERSION}</div><ul>${HOTFIX.map(t => `<li>${t}</li>`).join('')}</ul></div>`;
+  openSheet(`<div class="sh-head"><h3>${mode === 'hotfix' ? 'Kleines Update' : 'Neu in ' + FEATURE_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>
+    ${mode === 'hotfix' ? '' : `<div class="list">${CHANGELOG.map(([t, d]) => `<div class="row" style="align-items:flex-start"><span class="okdot" style="margin-top:2px">✓</span><div class="grow"><div class="t">${t}</div><div class="s">${d}</div></div></div>`).join('')}</div>`}
+    ${hot}<div class="btns"><button class="btn accent full" onclick="closeChangelog()">Los geht's</button></div>`);
 }
-function closeChangelog(){ try { localStorage.setItem('seenVersion', APP_VERSION); } catch (e) {} closeSheet(); }
-function maybeChangelog(){ let seen = null; try { seen = localStorage.getItem('seenVersion'); } catch (e) {} if (seen !== APP_VERSION && !sheetOpen()) openChangelog(); }
+function closeChangelog(){ closeSheet(); }
+function maybeChangelog(){
+  const seen = seenVersion(); if ((seen && vcmp(seen, APP_VERSION) >= 0) || sheetOpen()) return;
+  openChangelog(!seen || vcmp(seen, FEATURE_VERSION) < 0 ? 'full' : 'hotfix');
+}
 
 /* ================= Freigaben ================= */
 const SHARE = [['nutrition','Ernährung','Essen, Rezepte, eigene Lebensmittel'],['training','Training','Trainingstage und Einheiten'],['weight','Gewicht','Gewichtseinträge und Verlauf'],['measure','Körpermaße','Taille, Hüfte und Co.'],['level','Level und Abzeichen','Level, Serie, Abzeichen']];
@@ -2859,7 +2875,7 @@ async function rProfil(){
     ${prow('timer', 'Pausentimer', `${Math.floor(restDefault() / 60)}:${z(restDefault() % 60)} · ${restAuto() ? 'Auto' : 'Manuell'}`, 'openRest()')}
     ${prow('theme', 'Darstellung', THEMES.find(x => x[0] === (d.theme || 'auto'))[1], 'openTheme()')}
     ${prow('daten', 'Daten & Export', '', 'openData()')}${prow('lock', 'Sicherheit', '', 'openSecurity()')}</div>
-  <div class="pfoot"><button class="tbtn warn" onclick="doLogout()">Abmelden</button><button class="tbtn" onclick="openChangelog()">Spotter ${APP_VERSION.split('.').slice(0, 2).join('.')} · Was ist neu</button></div>`;
+  <div class="pfoot"><button class="tbtn warn" onclick="doLogout()">Abmelden</button><button class="tbtn" onclick="openChangelog('full')">Spotter ${APP_VERSION.split('.').slice(0, 2).join('.')} · Was ist neu</button></div>`;
   return h;
 }
 const sheetHead = (title, back = 'closeSheet();render()') => `<div class="sh-head"><h3>${title}</h3><button class="btn sm ghost" onclick="${back}">Fertig</button></div>`;

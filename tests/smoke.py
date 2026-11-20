@@ -73,10 +73,35 @@ def bottom_free(pg, name):
 # ---------- Abläufe ----------
 def flow_start_changelog(ctx):
     pg = open_app(ctx, dismiss=False); shot(pg, 'start_changelog')
-    check(pg.query_selector('text=Neu in Spotter') is not None, 'Changelog erscheint nach Update')
+    check(pg.query_selector('text=Neu in 1.7') is not None and 'HOTFIX 1.7.1' in pg.inner_text('#sheetBody').upper(), 'Unbekannt gesehen: Neu in 1.7 + Hotfix')
     pg.click('text=Los geht'); pg.wait_for_timeout(300)
     check(not pg.evaluate('sheetOpen()'), 'Changelog lässt sich schließen')
     return pg
+
+def flow_was_ist_neu(ctx):
+    def fresh(seen_key, val):
+        c = ctx.browser.new_context(viewport={'width': 390, 'height': 844})
+        if val: c.add_init_script(f"if(!sessionStorage.getItem('x')){{sessionStorage.setItem('x','1');localStorage.setItem('{seen_key}','{val}')}}")
+        pg = open_app(c, dismiss=False); return c, pg
+    c, pg = fresh('seenVersion', '1.6.1.1'); shot(pg, 'neu_voll')
+    t = pg.inner_text('#sheetBody')
+    check(pg.inner_text('.sh-head h3') == 'Neu in 1.7' and 'Rezeptsammlung' in t and 'HOTFIX 1.7.1' in t.upper() and 'Änderungen gelten für euch beide' in t, 'Zuletzt 1.6.x: volle 1.7-Ansicht + Hotfix')
+    pg.click('.sheet-bg', position={'x': 10, 'y': 10}); pg.reload(); pg.wait_for_timeout(1200)
+    check(not pg.evaluate('sheetOpen()'), 'Danach erscheint es nicht mehr (auch nach Tipp daneben)')
+    check(pg.evaluate("localStorage.getItem('seenVersion:u1')") == '1.7.1', 'Gesehen pro Person gespeichert')
+    c.close()
+    c, pg = fresh('seenVersion:u1', '1.7'); shot(pg, 'neu_hotfix')
+    t = pg.inner_text('#sheetBody')
+    check(pg.inner_text('.sh-head h3') == 'Kleines Update' and 'Rezeptsammlung' not in t and 'HOTFIX 1.7.1' in t.upper(), 'Zuletzt 1.7: nur „Kleines Update“')
+    pg.click("text=Los geht"); pg.reload(); pg.wait_for_timeout(1200)
+    check(not pg.evaluate('sheetOpen()'), 'Danach nicht mehr')
+    c.close()
+    c, pg = fresh('seenVersion:u1', '1.7.1')
+    check(not pg.evaluate('sheetOpen()'), 'Schon 1.7.1 gesehen: nichts')
+    pg.click('#tabs >> text=Profil'); pg.wait_for_timeout(500); pg.click('text=Was ist neu'); pg.wait_for_timeout(300)
+    check(pg.inner_text('.sh-head h3') == 'Neu in 1.7', 'Profil: „Was ist neu“ zeigt immer die volle Ansicht')
+    c.close()
+    return ctx.new_page()
 
 def flow_heute(ctx):
     pg = open_app(ctx)
@@ -868,7 +893,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_auswahl, flow_bearbeiten, flow_shopstate, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_was_ist_neu, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_auswahl, flow_bearbeiten, flow_shopstate, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():
