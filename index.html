@@ -1253,9 +1253,12 @@ const setTheme = run(async t => { applyTheme(t); await saveProfile({ theme: t })
 try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => applyTheme(S.me?.data?.theme || localStorage.getItem('theme'))); } catch (e) {}
 
 /* ================= Version & Neuigkeiten ================= */
-const APP_VERSION = '1.6.1.1';
+const APP_VERSION = '1.7';
 const CHANGELOG = [
-  ['Fehlerbehebungen', 'Sätze, auch Aufwärmsätze, löschst du jetzt über einen Tipp auf die Satznummer, mit Rückgängig. Die Trendlinie im Gewichtsdiagramm erscheint schon ab 3 Wiegungen und verbindet auch seltene Wiegungen.']
+  ['Rezeptsammlung', 'Unter Essen → Rezepte findest du 12 Rezepte mit viel Protein. Portionen anpassen, Mengen rechnen sich mit, eine Portion trägst du mit einem Tipp ein oder übernimmst das Rezept in deine eigenen.'],
+  ['Gemeinsame Einkaufsliste', 'Setze Zutaten mit einem Tipp auf die Liste. Ihr seht beide dieselbe Liste, gleiche Zutaten werden zusammengerechnet und ihr seht, wer was schon eingepackt hat. Funktioniert auch offline.'],
+  ['Fortschritt pro Übung', 'Öffne eine Einheit unter Training: Du siehst, bei welchen Übungen du dich verbessert hast, mit „vorher → jetzt“.'],
+  ['Bessere Lebensmittelsuche', 'Deine Lebensmittel stehen zuerst, danach beliebte Produkte aus Deutschland. Die Suche reagiert schneller und sagt Bescheid, wenn die Datenbank nicht antwortet.']
 ];
 function openChangelog(){
   openSheet(`<div class="sh-head"><h3>Neu in Spotter ${APP_VERSION}</h3><button class="btn sm ghost" onclick="closeChangelog()">Schließen</button></div>

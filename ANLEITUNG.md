@@ -3,6 +3,12 @@
 Spotter ist eure private Fitness- und Ernährungs-App für zwei. Öffne sie in Safari und füge sie über „Teilen → Zum Home-Bildschirm“ hinzu.
 Nach jedem Update die App einmal mit Internet öffnen, damit die neue Version geladen wird.
 
+**Neu in 1.7**: Küche & Fortschritt.
+- **Rezepte**: Unter Essen oben rechts auf „Rezepte“. In der **Sammlung** findest du 12 Rezepte (Filter Frühstück, Mittag & Abend, Mealprep), rechts das Protein pro Portion. Im Rezept passt du die Portionen an, die Mengen rechnen sich mit. „1 Portion eintragen“ öffnet die Menge in Portionen. „In meine Rezepte“ übernimmt das Rezept (pro Portion) zu deinen eigenen. **Meine Rezepte** sind deine bisherigen Vorlagen, mit Wochentagen zum Abhaken unter Heute.
+- **Einkaufsliste**: Im Rezept „Auf Einkaufsliste“ setzt alle Zutaten in der gewählten Portionenzahl auf eure gemeinsame Liste. Gleiche Zutaten werden zusammengerechnet. Du öffnest die Liste über den Einkaufswagen unter Essen oder unten in der Sammlung. Tippe eine Zeile an, um sie abzuhaken; „Du“ bzw. der Anfangsbuchstabe deines Partners zeigt, wer sie eingepackt hat. Oben rechts im Menü: „Erledigte entfernen“ und „Liste leeren“, jeweils mit Rückgängig. Funktioniert auch offline.
+- **Fortschritt**: Tippe unter Training auf eine Einheit. Oben steht, wie viele Übungen du verbessert hast (mehr Gewicht oder bei gleichem Gewicht mehr Wiederholungen), mit „vorher → jetzt“. Aufwärmsätze zählen nicht, die erste Einheit einer Übung auch nicht. Ab jetzt wird auch die Dauer gespeichert.
+- **Suche**: Deine eigenen und zuletzt genutzten Lebensmittel stehen zuerst, danach beliebte Produkte aus Deutschland. Antwortet die Datenbank nicht innerhalb von 6 Sekunden, steht ein Hinweis da; scanne dann den Barcode.
+
 **Neu in 1.6.1.1**: Sätze löschst du über einen Tipp auf die Satznummer („W“, „1“, „2“ …) und „Satz löschen“, mit Rückgängig. Die Trendlinie unter Körper erscheint schon ab 3 Wiegungen.
 
 **Neu in 1.6.1**: Training & Komfort.

@@ -72,6 +72,16 @@ Löschen ohne Dialog. `softDel(id, label)` blendet den Datenbank-Eintrag sofort 
 ### Haken-Zustände (Satz abhaken)
 Satznummer `.sn` (44 × 44 px, `aria-label` „Satz 2, Optionen“) öffnet `actionMenu` mit „Satz löschen“. `.chk` 44 px: offen = Rand `--line` · aktueller Satz = Zeile `.setrow.cur` auf `--soft`, Haken mit Rand `--ink` · erledigt = `--accent` gefüllt, Haken `--on-accent` · Aufwärmsatz erledigt = Haken auf `--soft` (nicht gelb). Vorausgefüllte Werte (`.nf.sug`) in `--muted` auf `--soft`. Erledigte Übung klappt zu `.exdone` (60 px, gelber Haken, „4 Sätze · 3.120 kg“, Chevron).
 
+### Detail einer Einheit (seit 1.7)
+Kopf: Name 30 px (`.wtitle`), „Mi, 14. Okt · 52 min“, „Schließen“. `.board` mit Anzahl verbesserter Übungen 72 px (`.wbn`) + `.lbl` „Bestwerte“ + „Übungen verbessert“, je Verbesserung Zeile (`.wup`: Name 15 px/800, „85 kg × 5 → 87,5 kg × 5“ 12 px `--board-muted`) mit Schild `.tag` (`--accent`, 13 px, 900). Trennlinie, dann `.wstats` Volumen/Sätze/Dauer. Liste der Übungen 60 px, verbesserte mit `.tag.soft` (`--hint`, Pfeil `--mine`), Tipp klappt Satz-Chips (`.wchip`) auf.
+
+### Rezepte und Einkaufsliste (seit 1.7)
+- Essen-Kopf: statt Serien-Pill `#hact` mit Einkaufswagen (`.hbtn.icon`, Zähler `.cbadge` in `--accent`) und „Rezepte“ (`.hbtn`).
+- Sammlung: Segment Sammlung | Meine Rezepte, Filter als `.chiprow`, Zeilen `.rzrow` ≥ 72 px (Name 15 px/800, darf zweizeilig sein), rechts Protein `.num` 24 px + kcal 12 px. Schwebender Button unten (`#rzfoot`).
+- Rezept: Name 26 px, `.board` „Protein / Portion“ 56 px + kcal/Carbs/Fett, Portionen-Stepper `.rzstep`, Zutaten 44 px mit Menge in fester Spalte 92 px (`.rzq`, nowrap). Mengen: g/ml auf 5, alles andere auf 0,5 gerundet, Einheit Einzahl/Mehrzahl über `unitFor`.
+- Einkaufsliste: Titel 36 px, Zeilen 50 px als `role="checkbox"` (`.shrow`), Kästchen 28 px (erledigt `--accent` mit Haken), Menge rechts, Kürzel wer: „Du“ auf `--soft`, Partner-Initiale weiß auf `--partner-fill` (#076A9F). Erledigte durchgestrichen in `--muted`, ans Gruppenende. Gruppen nach Abteilung mit `.lbl`.
+- Sticky-Leisten in Sheets müssen **direkte Kinder** von `.sheet-card` sein (sonst kleben sie nur in ihrem eigenen Container).
+
 ### Trend-Diagramm (Körper)
 - Achse rechts in ganzen kg (11 px, 700, `--board-muted`), Hilfslinien `--board-soft`. Ausschnitt mindestens 2 kg, auf ganze kg gerundet, Daten mittig; bei mehr als 6 kg Beschriftung in größeren Schritten.
 - Waage: Punkte r 2,4 in #4A525C. Trend (Ø 7 Tage): Linie 3 px `--accent`, Lücken über 14 Tage unterbrechen die Linie. Startwert: kleiner Ring + Zahl. Endwert: gelbes Schild (`--accent`, Text `--on-accent`, 12 px, 900).
