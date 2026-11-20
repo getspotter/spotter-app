@@ -4,6 +4,7 @@
 - Design: Entwürfe für Zutatenauswahl und Eintrag bearbeiten, Vorratszutaten in daten/rezepte.json
 - Einkaufsliste: neues Datenmodell shopstate (Status und Menge je Person und Eintrag, neuester gilt); beide können alle Einträge ändern und löschen, ohne fremde Zeilen zu schreiben; alte Haken werden übernommen
 - Einkaufsliste: Zutaten vor dem Übernehmen auswählen (Vorrat vorab abgewählt, Hinweis bei Zutaten, die schon auf der Liste stehen)
+- Einkaufsliste: Einträge bearbeiten (Menge) und löschen, auch die des Partners, mit Rückgängig; Kästchen und Zeile getrennt antippbar
 
 ## 1.7 – 20.11.2026
 - Design: Entwürfe 1.7 und Rezeptsammlung (daten/rezepte.json, 12 Rezepte)

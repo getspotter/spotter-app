@@ -334,12 +334,12 @@ def flow_einkauf(ctx):
     pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(800)
     check(pg.inner_text('#hact .cbadge') == '1', 'Essen-Kopf: Einkaufswagen mit Anzahl offener Einträge')
     pg.click('#hact [aria-label^="Einkaufsliste"]'); pg.wait_for_timeout(600); shot(pg, 'einkauf')
-    rows = lambda: pg.eval_on_selector_all('.shrow', 'els => els.map(e => [e.querySelector(".shn").textContent, e.querySelector(".shq").textContent, e.getAttribute("aria-checked"), (e.querySelector(".who")||{}).textContent||""])')
+    rows = lambda: pg.eval_on_selector_all('.shrow', 'els => els.map(e => [e.querySelector(".shn").textContent, e.querySelector(".shq").textContent, e.querySelector("[role=checkbox]").getAttribute("aria-checked"), (e.querySelector(".who")||{}).textContent||""])')
     r = rows()
     check(r[0][:3] == ['Paprika', '3 Stück', 'false'], 'Gleiche Zutat + Einheit von beiden zusammengerechnet')
     check(['Kartoffeln', '500 g', 'true', 'Du'] in r and ['Brokkoli', '1 Kopf', 'true', 'L'] in r, 'Wer hat abgehakt: „Du“ bzw. Partner-Kürzel; Erledigte am Gruppenende')
     check('Gemeinsam mit Lena · 2 von 3 erledigt' in pg.inner_text('#sheetBody'), 'Kopf: gemeinsam, x von y erledigt')
-    pg.click('.shrow >> nth=0'); pg.wait_for_timeout(500)
+    pg.click('.shrow >> nth=0 >> .shhit'); pg.wait_for_timeout(500)
     check(all(x[2] == 'true' for x in rows()), 'Abhaken setzt Status für beide zusammengefassten Einträge')
     # zweites iPhone: Partner hakt Paprika (sein Eintrag) danach wieder auf -> neuester Status zählt
     pg.evaluate("window.mockAsPartner({kind:'shopstate', data:{item_id:'si4', status:'offen', menge:1, at:new Date(Date.now()+5000).toISOString()}})")
@@ -374,12 +374,12 @@ def flow_einkauf(ctx):
     # offline abhaken, später synchronisieren
     ctx.set_offline(True); pg.evaluate("window.dispatchEvent(new Event('offline'))"); pg.wait_for_timeout(200)
     first = pg.inner_text('.shrow >> nth=0 >> .shn'); row = lambda: f'.shrow:has(.shn:text-is("{first}"))'
-    pg.click('.shrow >> nth=0'); pg.wait_for_timeout(400)
-    check(pg.evaluate("QUEUE.length") >= 1 and pg.get_attribute(row(), 'aria-checked') == 'true', 'Offline abhaken landet in der Warteschlange')
+    pg.click('.shrow >> nth=0 >> .shhit'); pg.wait_for_timeout(400)
+    check(pg.evaluate("QUEUE.length") >= 1 and pg.get_attribute(row() + ' .shhit', 'aria-checked') == 'true', 'Offline abhaken landet in der Warteschlange')
     ctx.set_offline(False); pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(1500)
     check(pg.evaluate("QUEUE.length") == 0, 'Online: Warteschlange synchronisiert')
     close(pg); pg.evaluate("openShop()"); pg.wait_for_timeout(600)
-    check(pg.get_attribute(row(), 'aria-checked') == 'true', 'Nach Sync und neuem Öffnen weiter abgehakt')
+    check(pg.get_attribute(row() + ' .shhit', 'aria-checked') == 'true', 'Nach Sync und neuem Öffnen weiter abgehakt')
     pg.click('[aria-label="Weitere Aktionen"]'); pg.click('#act >> text=Liste leeren'); pg.wait_for_timeout(300)
     check(len(rows()) == 0 and 'Liste geleert' in pg.inner_text('#undo'), 'Liste leeren mit Rückgängig')
     pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(200)
@@ -406,6 +406,51 @@ def flow_auswahl(ctx):
     pg.evaluate("openShop()"); pg.wait_for_timeout(600)
     names = pg.eval_on_selector_all('.shrow', 'els => els.map(e => e.querySelector(".shn").textContent + " " + e.querySelector(".shq").textContent)')
     check('Paprika 5 Stück' in names and not any(n.startswith('Mais') or n.startswith('Basmatireis') for n in names), 'Nur Ausgewähltes übernommen, mit vorhandenem zusammengerechnet')
+    return pg
+
+def flow_bearbeiten(ctx):
+    pg = open_app(ctx)
+    # iPhone A (Partner) legt einen Eintrag an
+    tid = pg.evaluate("window.mockAsPartner({kind:'shopitem', data:{name:'Gehackte Tomaten', menge:2, einheit:'Dose', abteilung:'Konserven', quelle:{id:'chili-pute',name:'Chili con Carne',portionen:4}}})")
+    pg.evaluate("openShop()"); pg.wait_for_timeout(600)
+    row = '.shrow:has(.shn:text-is("Gehackte Tomaten"))'
+    b = pg.query_selector(row + ' .shhit').bounding_box(); check(b['width'] >= 44 and b['height'] >= 44, 'Kästchen-Tippfläche mind. 44 × 44 px')
+    pg.click(row + ' .shmain'); pg.wait_for_timeout(300); shot(pg, 'einkauf_eintrag')
+    check('Von Lena · aus Chili con Carne' in pg.inner_text('.actcard') and pg.inner_text('.edstep b') == '2 Dosen', 'Sheet: Name, von wem, woher, Menge')
+    pg.click('.edstep [aria-label="Weniger"]'); check(pg.inner_text('.edstep b') == '1 Dose', 'Menge −1 (Dosen)')
+    pg.click('.edsave'); pg.wait_for_timeout(400)
+    check(pg.inner_text(row + ' .shq') == '1 Dose', 'iPhone B ändert die Menge')
+    pd = pg.evaluate(f"(async()=>{{const it=(await q('shopitem','u2')).find(i=>i.id==='{tid}');return it.data.menge}})()")
+    check(pd == 2, 'Fremder Eintrag selbst unverändert (nur eigener Zustand geschrieben)')
+    pg.click(row + ' .shhit'); pg.wait_for_timeout(300)
+    check(pg.get_attribute(row + ' .shhit', 'aria-checked') == 'true' and pg.inner_text(row + ' .shq') == '1 Dose', 'Abhaken behält die geänderte Menge')
+    pg.click(row + ' .shmain'); pg.click('.edel'); pg.wait_for_timeout(400)
+    check(pg.query_selector(row) is None and 'Gehackte Tomaten gelöscht' in pg.inner_text('#undo'), 'Löschen schließt das Sheet, Rückgängig-Leiste')
+    pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(500)
+    check(pg.query_selector(row) is not None and pg.get_attribute(row + ' .shhit', 'aria-checked') == 'true' and pg.inner_text(row + ' .shq') == '1 Dose', 'Rückgängig stellt den vorherigen Zustand her')
+    # Beide Geräte: der gültige Zustand ergibt sich für beide aus denselben Zeilen
+    eff = pg.evaluate(f"(async()=>{{await shopLoad();return shopEff(SL.items.find(i=>i.id==='{tid}'))}})()")
+    check(eff['status'] == 'erledigt' and eff['menge'] == 1, 'Gleicher Stand für beide nach Ändern, Abhaken, Löschen, Rückgängig')
+    # Schritte g ±50, 0 -> „Löschen“
+    pg.evaluate("openShop()"); pg.wait_for_timeout(500)
+    pg.click('.shrow:has(.shn:text-is("Kartoffeln")) .shmain'); pg.click('.edstep [aria-label="Mehr"]')
+    check(pg.inner_text('.edstep b') == '550 g', 'g in 50er-Schritten')
+    for _ in range(11): pg.click('.edstep [aria-label="Weniger"]')
+    check(pg.inner_text('.edstep b') == '0 g' and pg.inner_text('.edsave') == 'Löschen', 'Bei 0 wird „Speichern“ zu „Löschen“')
+    pg.click('.actcard .tbtn.edel'); pg.wait_for_timeout(300)
+    # freier Eintrag: nur Löschen
+    pg.fill('#shopq', 'Kaffee'); pg.click('.shplus'); pg.wait_for_timeout(500)
+    pg.click('.shrow:has(.shn:text-is("Kaffee")) .shmain'); pg.wait_for_timeout(200)
+    check(pg.query_selector('.edstep') is None and pg.query_selector('.edsave') is None and pg.is_visible('.edel') and 'Von dir' in pg.inner_text('.actcard'), 'Freier Eintrag ohne Menge: nur Löschen, „Von dir“')
+    pg.evaluate("actClose()")
+    # offline ändern und löschen, später synchronisieren
+    ctx.set_offline(True); pg.evaluate("window.dispatchEvent(new Event('offline'))"); pg.wait_for_timeout(200)
+    pg.click('.shrow:has(.shn:text-is("Paprika")) .shmain'); pg.click('.edstep [aria-label="Mehr"]'); pg.click('.edsave'); pg.wait_for_timeout(300)
+    pg.click('.shrow:has(.shn:text-is("Kaffee")) .shmain'); pg.click('.edel'); pg.wait_for_timeout(300)
+    check(pg.evaluate("QUEUE.length") >= 2 and pg.query_selector('.shrow:has(.shn:text-is("Kaffee"))') is None, 'Offline ändern und löschen über die Warteschlange')
+    ctx.set_offline(False); pg.evaluate("window.dispatchEvent(new Event('online'))"); pg.wait_for_timeout(1500)
+    pg.evaluate("commitUndo(); openShop()"); pg.wait_for_timeout(600)
+    check(pg.evaluate("QUEUE.length") == 0 and pg.inner_text('.shrow:has(.shn:text-is("Paprika")) .shq') == '4 Stück' and pg.query_selector('.shrow:has(.shn:text-is("Kaffee"))') is None, 'Nach Sync: Änderung und Löschung erhalten')
     return pg
 
 def flow_shopstate(ctx):
@@ -770,6 +815,7 @@ def flow_umbruch(ctx):
       ('menge', "openPicker({mode:'log',slot:'mittag',title:'Mittagessen'}).then(()=>drawAmount(1))"), ('gewicht', "S.tab='koerper';render().then(()=>openWeight())"),
       ('masse', "openMeasure()"), ('rezepte', "S.tab='essen';render().then(()=>openRezepte('sammlung'))"), ('rezept', "openRezepte('sammlung').then(()=>drawRezept('chili-pute'))"),
       ('einkauf', "S.tab='essen';render().then(()=>loadSammlung()).then(()=>shopFromRecipe('chili-pute',4)).then(()=>openShop())"),
+      ('einkauf_eintrag', "S.tab='essen';render().then(()=>openShop()).then(()=>shopEdit(0))"),
       ('einkauf_auswahl', "openRezepte('sammlung').then(()=>drawRezept('chili-pute')).then(()=>shopSelect('chili-pute',4))"),
       ('einheit_fortschritt', "S.tab='training';render().then(()=>openWo(Object.keys(S.wos).at(-1)))"), ('rueckgaengig', "S.tab='essen';render().then(()=>undoBar('Hähnchen-Reis-Bowl mit Gemüse gelöscht',null,null))")]
     pg.evaluate("S.day=addDays(today(),-3);S.tab='heute';render()"); pg.wait_for_timeout(500)
@@ -822,7 +868,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_auswahl, flow_shopstate, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_auswahl, flow_bearbeiten, flow_shopstate, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():

@@ -323,7 +323,17 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .shadd{margin-top:12px}
 .shadd input{min-height:52px}
 .shplus{width:52px;min-height:52px;padding:0;flex:none}
-.shrow{display:flex;align-items:center;gap:12px;min-height:50px;padding:8px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.shrow{display:flex;align-items:center;gap:4px;min-height:50px;padding:0 16px 0 8px;border-bottom:1px solid var(--line)}
+.shhit{flex:none;width:44px;height:44px;border:0;background:none;padding:0;display:flex;align-items:center;justify-content:center;color:inherit;border-radius:var(--r-sm)}
+.shmain{flex:1;min-width:0;display:flex;align-items:center;gap:12px;align-self:stretch;border:0;background:none;color:inherit;text-align:left;padding:8px 0 8px 4px;font:inherit}
+.selrow{padding:8px 16px;gap:12px;cursor:pointer}
+.edmeta{display:flex;align-items:center;gap:8px;margin:4px 0 16px}
+.edq{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 12px 12px 16px}
+.edstep{display:flex;align-items:center;gap:12px}
+.edstep b{font-size:22px;font-weight:900;min-width:88px;text-align:center;white-space:nowrap}
+.edstep button{width:44px;height:44px;border:0;border-radius:var(--r-btn);background:var(--soft);color:var(--ink);font-size:22px;font-weight:800}
+.edsave{margin-top:12px}
+.edel{display:block;width:100%;margin:8px 0 16px;font-size:16px;font-weight:800}
 .shrow:last-child{border-bottom:0}
 .shbox{flex:none;width:28px;height:28px;border-radius:8px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--on-accent)}
 .shrow.done .shbox{background:var(--accent);border-color:var(--accent)}
@@ -1925,11 +1935,42 @@ function drawShop(){
     <p class="small muted shmeta">${P2 ? `<span class="pdot"></span>Gemeinsam mit ${esc(nameOf(P2).split(' ')[0])} · ` : ''}${done} von ${rows.length} erledigt</p>
     ${Object.keys(src).length ? `<p class="small muted shmeta">Aus: ${Object.values(src).map(qd => `${esc(qd.name)} (${qd.portionen})`).join(' · ')}</p>` : ''}
     <div class="searchrow shadd"><input id="shopq" placeholder="Etwas hinzufügen, z. B. Skyr" enterkeyhint="done" onkeydown="if(event.key==='Enter')shopAdd()"><button class="btn shplus" aria-label="Hinzufügen" onclick="shopAdd()">${I_PLUS}</button></div>
-    <div id="shoplist">${groups.length ? groups.map(([a, rs]) => `<div class="lbl" style="margin:16px 4px 8px">${esc(a)}</div><div class="list">${rs.map(r => { const i = k++; return `<div class="shrow ${r.done ? 'done' : ''}" role="checkbox" aria-checked="${r.done}" aria-label="${esc(r.name)}${r.hasQ ? ', ' + qtyTxt(Math.round(r.menge * 2) / 2, r.unit) : ''}" tabindex="0" onclick="shopToggle(${i})" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();shopToggle(${i})}">
-        <span class="shbox">${r.done ? I_CHK : ''}</span><span class="shn">${esc(r.name)}</span><span class="shq">${r.hasQ ? qtyTxt(Math.round(r.menge * 2) / 2, r.unit) : ''}</span>${r.done && r.who ? ini(r.who) : ''}</div>`; }).join('')}</div>`).join('')
+    <div id="shoplist">${groups.length ? groups.map(([a, rs]) => `<div class="lbl" style="margin:16px 4px 8px">${esc(a)}</div><div class="list">${rs.map(r => { const i = k++; return `<div class="shrow ${r.done ? 'done' : ''}">
+        <button class="shhit" role="checkbox" aria-checked="${r.done}" aria-label="${esc(r.name)} abhaken" onclick="shopToggle(${i})"><span class="shbox">${r.done ? I_CHK : ''}</span></button>
+        <button class="shmain" aria-label="${esc(r.name)}${r.hasQ ? ', ' + qtyTxt(Math.round(r.menge * 2) / 2, r.unit) : ''} bearbeiten" onclick="shopEdit(${i})"><span class="shn">${esc(r.name)}</span><span class="shq">${r.hasQ ? qtyTxt(Math.round(r.menge * 2) / 2, r.unit) : ''}</span>${r.done && r.who ? ini(r.who) : ''}</button></div>`; }).join('')}</div>`).join('')
       : '<div class="note" style="margin-top:16px">Die Liste ist leer. Füge oben etwas hinzu oder setze Zutaten aus einem Rezept auf die Liste.</div>'}</div>`);
   S.shopN = rows.length - done;
 }
+// Eintrag bearbeiten: Menge ändern (zusammengefasste Zeile: Gesamtmenge an den ersten Eintrag, Rest „entfernt“) oder löschen
+let ED = null;
+const shopStep = u => ['g', 'ml'].includes(unitBase(u)) ? 50 : 1;
+function shopEdit(k){
+  const r = SL.view?.[k]; if (!r) return;
+  ED = { key: r.key, name: r.name, unit: r.unit, hasQ: r.hasQ, v: Math.round(r.menge * 2) / 2, orig: Math.round(r.menge * 2) / 2, items: r.items };
+  drawEdit();
+}
+function drawEdit(){
+  const owners = [...new Set(ED.items.map(it => it.user_id))], src = [...new Set(ED.items.map(it => it.data.quelle?.name).filter(Boolean))];
+  const pn = esc((nameOf(S.partner) || 'Partner').split(' ')[0]);
+  const von = owners.length > 1 ? `Von dir und ${pn}` : owners[0] === S.user.id ? 'Von dir' : `Von ${pn}`;
+  const zero = ED.hasQ && !ED.v;
+  overlay(`<h3 class="selt">${esc(ED.name)}</h3><p class="small muted edmeta">${owners.some(o => o !== S.user.id) ? '<span class="pdot"></span>' : ''}${von}${src.length ? ' · aus ' + src.map(esc).join(', ') : ''}</p>
+    ${ED.hasQ ? `<div class="card edq"><span class="lbl">Menge</span><div class="edstep"><button aria-label="Weniger" onclick="ED.v=Math.max(0,ED.v-shopStep(ED.unit));drawEdit()">−</button><b>${qtyTxt(ED.v, ED.unit)}</b><button aria-label="Mehr" onclick="ED.v+=shopStep(ED.unit);drawEdit()">+</button></div></div>
+      <button class="btn full big edsave" onclick="${zero ? 'shopDelete()' : 'shopSaveEdit()'}">${zero ? 'Löschen' : 'Speichern'}</button>` : ''}
+    <button class="tbtn warn edel" onclick="shopDelete()">Von der Liste löschen</button>`, 'Eintrag bearbeiten');
+}
+const shopSaveEdit = run(async () => {
+  if (ED.v === ED.orig){ actClose(); return; }
+  const [first, ...rest] = ED.items; actClose();
+  const jobs = [shopSet(first, { menge: ED.v }), ...rest.map(it => shopSet(it, { status: 'entfernt' }))]; drawShop(); await Promise.all(jobs);
+  toast('Menge geändert'); renderHeader();
+});
+const shopDelete = run(async () => {
+  const its = ED.items, name = ED.name; actClose();
+  const jobs = its.map(it => shopSet(it, { status: 'entfernt' })); drawShop(); const prev = (await Promise.all(jobs)).map((st, k) => [its[k], st]);
+  renderHeader();
+  undoBar(`${name} gelöscht`, run(async () => { await shopRestore(prev); if ($('#shoplist')) drawShop(); renderHeader(); }), null, 'view');
+});
 // Zugänge: Button unten in der Sammlung, Button im Rezept, Icon im Essen-Kopf
 const I_CART = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h11l2-8H6.2"/><circle cx="9.5" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></svg>';
 const shopBadge = () => S.shopN ? `<span class="cbadge">${S.shopN}</span>` : '';
