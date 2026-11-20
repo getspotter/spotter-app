@@ -1,5 +1,8 @@
 # Changelog Spotter
 
+## 1.7.1 – Hotfix – 20.11.2026
+- Design: Entwürfe für Zutatenauswahl und Eintrag bearbeiten, Vorratszutaten in daten/rezepte.json
+
 ## 1.7 – 20.11.2026
 - Design: Entwürfe 1.7 und Rezeptsammlung (daten/rezepte.json, 12 Rezepte)
 - Training: Fortschritt pro Übung – Detail einer Einheit mit „Übungen verbessert“ (mehr kg, bei gleichem Gewicht mehr Wdh., Körpergewicht nur Wdh., erste Einheit zählt nicht, ohne Aufwärmsätze), Satz-Chips, Dauer; „Bestwerte“ in der Übersicht nach derselben Regel; Dauer wird gespeichert (dauer_min)
