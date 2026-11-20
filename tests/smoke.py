@@ -342,7 +342,7 @@ def flow_einkauf(ctx):
     pg.click('.shrow >> nth=0'); pg.wait_for_timeout(500)
     check(all(x[2] == 'true' for x in rows()), 'Abhaken setzt Status für beide zusammengefassten Einträge')
     # zweites iPhone: Partner hakt Paprika (sein Eintrag) danach wieder auf -> neuester Status zählt
-    pg.evaluate("window.mockAsPartner({kind:'shopcheck', data:{item_id:'si4', status:'offen', at:new Date(Date.now()+5000).toISOString()}})")
+    pg.evaluate("window.mockAsPartner({kind:'shopstate', data:{item_id:'si4', status:'offen', menge:1, at:new Date(Date.now()+5000).toISOString()}})")
     # ... und einen älteren Haken für Kartoffeln, der gegen meinen neueren verliert
     pg.evaluate("window.mockAsPartner({kind:'shopcheck', data:{item_id:'si2', status:'offen', at:new Date(Date.now()-3600000).toISOString()}})")
     close(pg); pg.click('#hact [aria-label^="Einkaufsliste"]'); pg.wait_for_timeout(600)
@@ -367,9 +367,10 @@ def flow_einkauf(ctx):
     check(len(rows()) == n_open and 'erledigte entfernt' in pg.inner_text('#undo'), 'Erledigte entfernen mit Rückgängig-Leiste')
     pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(200)
     check(len(rows()) == n_all, 'Rückgängig stellt Erledigte wieder her')
-    pg.click('[aria-label="Weitere Aktionen"]'); pg.click('#act >> text=Erledigte entfernen'); pg.wait_for_timeout(5600)
-    st = pg.evaluate("(async()=>{const ci=await q('shopitem',S.user.id);return {mine:ci.map(i=>i.data.name), chk:(await q('shopcheck',S.user.id)).filter(c=>c.data.status==='entfernt').map(c=>c.data.item_id)}})()")
-    check('Kartoffeln' not in st['mine'] and 'si3' in st['chk'], 'Nach 5 s: eigene gelöscht, Partner-Eintrag als „entfernt“ markiert')
+    pg.click('[aria-label="Weitere Aktionen"]'); pg.click('#act >> text=Erledigte entfernen'); pg.wait_for_timeout(600)
+    st = pg.evaluate("(async()=>{const s=await q('shopstate',S.user.id);return {ent:s.filter(c=>c.data.status==='entfernt').map(c=>c.data.item_id), legacy:(await q('shopcheck',S.user.id)).length}})()")
+    check('si2' in st['ent'] and 'si3' in st['ent'], 'Erledigte entfernen schreibt sofort „entfernt“ (eigene und fremde Einträge)')
+    check(st['legacy'] == 0, 'Migration: eigener alter shopcheck durch shopstate ersetzt')
     # offline abhaken, später synchronisieren
     ctx.set_offline(True); pg.evaluate("window.dispatchEvent(new Event('offline'))"); pg.wait_for_timeout(200)
     first = pg.inner_text('.shrow >> nth=0 >> .shn'); row = lambda: f'.shrow:has(.shn:text-is("{first}"))'
@@ -383,6 +384,29 @@ def flow_einkauf(ctx):
     check(len(rows()) == 0 and 'Liste geleert' in pg.inner_text('#undo'), 'Liste leeren mit Rückgängig')
     pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(200)
     check(len(rows()) > 0, 'Liste wiederhergestellt')
+    return pg
+
+def flow_shopstate(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("loadSammlung().then(()=>openShop())"); pg.wait_for_timeout(700)
+    get = lambda name: pg.evaluate(f"(()=>{{const it=SL.items.find(i=>i.data.name==='{name}'&&i.user_id==='u2');return shopEff(it)}})()")
+    # Partner (iPhone B) ändert die Menge seines Brokkoli-Eintrags auf 2, danach hake ich ihn auf -> Menge bleibt 2
+    pg.evaluate("window.mockAsPartner({kind:'shopstate', data:{item_id:'si3', status:'offen', menge:2, at:new Date(Date.now()-1000).toISOString()}})")
+    pg.evaluate("shopLoad()"); pg.wait_for_timeout(300)
+    check(get('Brokkoli')['menge'] == 2 and get('Brokkoli')['status'] == 'offen', 'Neuester Zustand gilt, Menge überschreibt die ursprüngliche')
+    pg.evaluate("shopSet(SL.items.find(i=>i.id==='si3'), {status:'erledigt'})"); pg.wait_for_timeout(300)
+    e = get('Brokkoli'); check(e['status'] == 'erledigt' and e['menge'] == 2 and e['who'] == 'u1', 'Abhaken behält die geänderte Menge (vollständiger Zustand), ohne fremde Zeile zu schreiben')
+    owner = pg.evaluate("SL.items.find(i=>i.id==='si3').user_id")
+    check(owner == 'u2' and pg.evaluate("SL.states.filter(c=>c.data.item_id==='si3'&&c.user_id==='u1').length") == 1, 'Genau ein eigener Zustand je Eintrag')
+    pg.evaluate("shopSet(SL.items.find(i=>i.id==='si3'), {status:'entfernt'})"); pg.evaluate("shopLoad().then(drawShop)"); pg.wait_for_timeout(400)
+    check(pg.query_selector('.shn:text-is("Brokkoli")') is None, '„Entfernt“ blendet den Eintrag für beide aus')
+    # Aufräumen: eigener Eintrag seit 40 Tagen entfernt -> gelöscht; fremder bleibt liegen
+    pg.evaluate("""(async()=>{const r=await add('shopitem',null,{name:'Alt',menge:1,einheit:'Stück',abteilung:'Sonstiges'});
+      await add('shopstate',null,{item_id:r.id,status:'entfernt',menge:1,at:new Date(Date.now()-40*864e5).toISOString()});
+      window.mockAsPartner({kind:'shopitem', data:{name:'FremdAlt',menge:1,einheit:'Stück',abteilung:'Sonstiges'}});
+      setLS('shopclean:'+S.user.id,''); await shopLoad(); await shopCleanup(); await shopLoad();})()"""); pg.wait_for_timeout(500)
+    names = pg.evaluate("SL.items.map(i=>i.data.name)")
+    check('Alt' not in names and 'FremdAlt' in names, 'Aufräumen: eigene nach 30 Tagen gelöscht, fremde bleiben')
     return pg
 
 def flow_essen_teilen(ctx):
@@ -775,7 +799,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_shopstate, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():

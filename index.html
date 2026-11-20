@@ -1812,9 +1812,10 @@ const rzCopy = run(async id => {
 
 /* ================= Einkaufsliste (gemeinsam) ================= */
 // shopitem  { name, menge, einheit, abteilung, quelle?: { id, name, portionen } } – jede Person schreibt nur eigene
-// shopcheck { item_id, status: 'offen'|'erledigt'|'entfernt', at } – genau einer je Person und Eintrag, wird aktualisiert.
-// Status eines Eintrags = neuester shopcheck (nach at, Zeit des Tipps) beider Personen; wer abgehakt hat = dessen Besitzer.
-// Beide Kinds ohne Freigabe-Kategorie: für den Partner immer sichtbar. Zusammengerechnet wird nur in der Anzeige.
+// shopstate { item_id, status: 'offen'|'erledigt'|'entfernt', menge, at } – genau einer je Person und Eintrag, wird aktualisiert
+// und enthält immer den vollständigen Zustand. Gültig ist der neueste (nach at, Zeit des Tipps) beider Personen, „menge“
+// überschreibt die ursprüngliche Menge. So ändern, haken ab und löschen beide alle Einträge, ohne fremde Zeilen zu schreiben.
+// Alte shopcheck-Einträge (1.7) werden wie shopstate ohne Menge gelesen. Alle Kinds ohne Freigabe-Kategorie.
 const ABTEILUNGEN = ['Obst & Gemüse', 'Kühlregal', 'Fleisch & Fisch', 'Brot & Backwaren', 'Trockenware', 'Konserven', 'Tiefkühl', 'Sonstiges'];
 const ABT_WORDS = [['Obst & Gemüse', /apfel|banane|beere|zwiebel|paprika|tomate(?!n.*dose)|gurke|salat|kartoffel|möhre|karotte|brokkoli|zucchini|spinat|pilz|champignon|knoblauch|zitrone|avocado|obst|gemüse/i],
   ['Kühlregal', /skyr|quark|joghurt|milch|käse|butter|ei(er)?\b|sahne|hüttenkäse|tofu/i], ['Fleisch & Fisch', /hähnchen|pute|hack|rind|schwein|lachs|fisch|thunfisch(?!.*dose)|garnele|fleisch/i],
@@ -1825,43 +1826,46 @@ function guessAbt(name){
   if (hit) return hit.abteilung;
   return (ABT_WORDS.find(([, re]) => re.test(name)) || ['Sonstiges'])[0];
 }
-let SL = { items: [], checks: [], hide: new Set(), over: {} };
+let SL = { items: [], states: [] };
 async function shopLoad(){
-  const ids = [S.user.id, S.partner?.id].filter(Boolean);
-  const [items, checks] = await Promise.all([ Promise.all(ids.map(id => q('shopitem', id).catch(() => []))).then(x => x.flat()), Promise.all(ids.map(id => q('shopcheck', id).catch(() => []))).then(x => x.flat()) ]);
-  SL.items = items; SL.checks = checks; SL.over = {};
+  const ids = [S.user.id, S.partner?.id].filter(Boolean), all = k => Promise.all(ids.map(id => q(k, id).catch(() => []))).then(x => x.flat());
+  const [items, states, checks] = await Promise.all([all('shopitem'), all('shopstate'), all('shopcheck')]);
+  SL.items = items; SL.states = [...states, ...checks.map(c => ({ ...c, legacy: true }))];
 }
-function shopStatus(it){
-  if (SL.over[it.id]) return SL.over[it.id];
-  const c = SL.checks.filter(x => x.data.item_id === it.id).sort((a, b) => (a.data.at || '') < (b.data.at || '') ? 1 : -1)[0];
-  return c ? { status: c.data.status, who: c.user_id } : { status: 'offen', who: null };
+// Gültiger Zustand eines Eintrags: neuester shopstate/shopcheck beider Personen
+function shopEff(it){
+  const c = SL.states.filter(x => x.data.item_id === it.id).sort((a, b) => (a.data.at || '') < (b.data.at || '') ? 1 : (a.data.at || '') > (b.data.at || '') ? -1 : (a.legacy ? 1 : -1))[0];
+  const menge = c && 'menge' in c.data ? c.data.menge : it.data.menge;
+  return c ? { status: c.data.status, menge, who: c.user_id, at: c.data.at } : { status: 'offen', menge, who: null, at: '' };
 }
-// Zeilen der Anzeige: gleiche Zutat + gleiche Einheit zusammengerechnet, getrennt nach offen/erledigt
+// Zeilen der Anzeige: gleiche Zutat + gleiche Einheit zusammengerechnet (nur „offen“ untereinander), Erledigte getrennt
 function shopRows(){
   const rows = {};
-  SL.items.filter(it => !SL.hide.has(it.id)).forEach(it => {
-    const st = shopStatus(it); if (st.status === 'entfernt') return;
+  SL.items.forEach(it => {
+    const st = shopEff(it); if (st.status === 'entfernt') return;
     const done = st.status === 'erledigt', key = `${it.data.name.trim().toLowerCase()}|${unitBase(it.data.einheit)}|${done ? 'x' : 'o'}`;
     const r = rows[key] || (rows[key] = { key, name: it.data.name, unit: unitBase(it.data.einheit), abt: it.data.abteilung || 'Sonstiges', items: [], menge: 0, hasQ: false, done, who: null });
-    r.items.push(it); if (num(it.data.menge)){ r.menge += num(it.data.menge); r.hasQ = true; }
+    r.items.push(it); if (num(st.menge)){ r.menge += num(st.menge); r.hasQ = true; }
     if (done && (!r.who || st.who === S.user.id)) r.who = st.who;
   });
   return Object.values(rows);
 }
 const shopOpenCount = () => shopRows().filter(r => !r.done).length;
-// Eigenen shopcheck für einen Eintrag anlegen oder aktualisieren (offline über die Warteschlange)
-async function shopSet(it, status){
-  const at = new Date().toISOString(), own = SL.checks.find(c => c.user_id === S.user.id && c.data.item_id === it.id);
-  const data = { item_id: it.id, status, at };
+// Eigenen shopstate schreiben (vollständiger Zustand), lokal sofort, Netz über q/add/upd (offline: Warteschlange)
+async function shopSet(it, patch){
+  const cur = shopEff(it), data = { item_id: it.id, status: patch.status ?? cur.status, menge: 'menge' in patch ? patch.menge : (cur.menge ?? null), at: new Date().toISOString() };
+  const own = SL.states.find(c => c.user_id === S.user.id && c.data.item_id === it.id && !c.legacy), old = SL.states.find(c => c.user_id === S.user.id && c.data.item_id === it.id && c.legacy);
+  if (old){ SL.states = SL.states.filter(c => c !== old); del(old.id).catch(() => {}); }   // Migration: eigener alter shopcheck weicht
   if (own){ own.data = data; await upd(own.id, data); }
-  else { const row = await add('shopcheck', null, data); SL.checks.push({ ...row, user_id: S.user.id, data }); }
+  else { const local = { id: 'local-' + it.id, user_id: S.user.id, data }; SL.states.push(local); const row = await add('shopstate', null, data); local.id = row.id; }
+  return { status: cur.status, menge: cur.menge };
 }
+// Vorherige Zustände zurückschreiben (Rückgängig)
+async function shopRestore(prev){ for (const [it, st] of prev) await shopSet(it, st); }
 const shopToggle = run(async k => {
   const key = SL.view?.[k]?.key, r = shopRows().find(x => x.key === key); if (!r) return;
   const st = r.done ? 'offen' : 'erledigt';
-  r.items.forEach(it => SL.over[it.id] = { status: st, who: S.user.id }); drawShop();
-  for (const it of r.items) await shopSet(it, st);
-  r.items.forEach(it => delete SL.over[it.id]);
+  const jobs = r.items.map(it => shopSet(it, { status: st })); drawShop(); await Promise.all(jobs); renderHeader();
 });
 const shopAdd = run(async () => {
   const el = $('#shopq'), name = el.value.trim(); if (!name) return;
@@ -1875,19 +1879,22 @@ const shopFromRecipe = run(async (id, n) => {
   await shopLoad(); toast(`${r.zutaten.length} Zutaten auf der Einkaufsliste`); renderHeader(); if (typeof rzShopBtn === 'function' && $('#rzshop')) rzShopBtn(id);
 });
 // Erledigte entfernen / Liste leeren: sofort ausgeblendet, nach 5 s eigene Einträge gelöscht, fremde als „entfernt“ markiert
-function shopClear(all){
+// Erledigte entfernen / Liste leeren: sofort „entfernt“ für beide, Rückgängig schreibt den vorherigen Zustand zurück
+const shopClear = run(async all => {
   const its = shopRows().filter(r => all || r.done).flatMap(r => r.items); if (!its.length) return toast(all ? 'Die Liste ist schon leer' : 'Nichts erledigt');
-  its.forEach(it => SL.hide.add(it.id)); drawShop();
-  undoBar(all ? 'Liste geleert' : `${its.length} erledigte entfernt`, () => { its.forEach(it => SL.hide.delete(it.id)); drawShop(); }, async () => {
-    for (const it of its){
-      if (it.user_id === S.user.id){ await del(it.id); const c = SL.checks.find(x => x.user_id === S.user.id && x.data.item_id === it.id); if (c) await del(c.id); }
-      else await shopSet(it, 'entfernt');
-      SL.hide.delete(it.id);
-    }
-    await shopLoad(); if ($('#shoplist')) drawShop(); renderHeader();
-  }, 'sheet');
+  const jobs = its.map(it => shopSet(it, { status: 'entfernt' })); drawShop(); const prev = (await Promise.all(jobs)).map((st, k) => [its[k], st]);
+  undoBar(all ? 'Liste geleert' : `${its.length} erledigte entfernt`, run(async () => { await shopRestore(prev); if ($('#shoplist')) drawShop(); renderHeader(); }), null, 'view');
+});
+// Aufräumen (höchstens einmal am Tag): eigene Einträge, die seit über 30 Tagen „entfernt“ sind, samt eigener Zustände löschen
+async function shopCleanup(){
+  const k = 'shopclean:' + S.user.id; if (getLS(k, '') === today()) return; setLS(k, today());
+  const limit = new Date(Date.now() - 30 * 864e5).toISOString();
+  for (const it of SL.items.filter(x => x.user_id === S.user.id)){
+    const st = shopEff(it); if (st.status !== 'entfernt' || !st.at || st.at > limit) continue;
+    await del(it.id); for (const c of SL.states.filter(c => c.user_id === S.user.id && c.data.item_id === it.id)) await del(c.id);
+  }
 }
-const openShop = run(async () => { await loadSammlung().catch(() => null); await shopLoad(); drawShop(); });
+const openShop = run(async () => { await loadSammlung().catch(() => null); await shopLoad(); drawShop(); shopCleanup().catch(() => {}); });
 function drawShop(){
   const rows = shopRows(), done = rows.filter(r => r.done).length, P2 = S.partner;
   const src = {}; rows.filter(r => !r.done).forEach(r => r.items.forEach(it => { const qd = it.data.quelle; if (qd) src[qd.id] = qd; }));
