@@ -354,13 +354,13 @@ def flow_einkauf(ctx):
     close(pg)
     pg.click('#hact >> text=Rezepte'); pg.wait_for_timeout(500)
     check(pg.query_selector('.shopbtn .cbadge') is not None, 'Sammlung: Button Einkaufsliste mit Anzahl')
-    pg.evaluate("drawRezept('chili-pute')"); pg.wait_for_timeout(200); pg.click('text=Auf Einkaufsliste'); pg.wait_for_timeout(600)
+    pg.evaluate("drawRezept('chili-pute')"); pg.wait_for_timeout(200); pg.click('text=Auf Einkaufsliste'); pg.wait_for_timeout(500); pg.click('.selgo .btn'); pg.wait_for_timeout(600)
     check('Zutaten auf der Einkaufsliste' in toast(pg), 'Rezept auf die Einkaufsliste')
-    pg.evaluate("drawRezept('haehnchen-reis-pfanne')"); pg.wait_for_timeout(200); pg.click('text=Auf Einkaufsliste'); pg.wait_for_timeout(600)
+    pg.evaluate("drawRezept('haehnchen-reis-pfanne')"); pg.wait_for_timeout(200); pg.click('text=Auf Einkaufsliste'); pg.wait_for_timeout(500); pg.click('.selgo .btn'); pg.wait_for_timeout(600)
     pg.evaluate("openShop()"); pg.wait_for_timeout(600); shot(pg, 'einkauf_rezepte')
     r = rows()
     check(['Paprika', '5 Stück', 'false', ''] in r, 'Zusammenrechnen über alle offenen Einträge (1 + 2 + 2 Stück)')
-    check(['Zwiebel', '3 Stück', 'false', ''] in r and ['Olivenöl', '4 TL', 'false', ''] in r, 'Gleiche Zutaten aus zwei Rezepten zusammengerechnet')
+    check(['Zwiebel', '3 Stück', 'false', ''] in r and not any(x[0] == 'Olivenöl' for x in r), 'Gleiche Zutaten aus zwei Rezepten zusammengerechnet, Vorrat nicht übernommen')
     check('Aus: Chili con Carne (4) · Hähnchen-Reis-Pfanne (2)' in pg.inner_text('#sheetBody'), 'Kopf: „Aus: …“ mit Portionen')
     n_open = sum(1 for x in r if x[2] == 'false'); n_all = len(r)
     pg.click('[aria-label="Weitere Aktionen"]'); pg.click('#act >> text=Erledigte entfernen'); pg.wait_for_timeout(300)
@@ -384,6 +384,28 @@ def flow_einkauf(ctx):
     check(len(rows()) == 0 and 'Liste geleert' in pg.inner_text('#undo'), 'Liste leeren mit Rückgängig')
     pg.click('#undo >> text=Rückgängig'); pg.wait_for_timeout(200)
     check(len(rows()) > 0, 'Liste wiederhergestellt')
+    return pg
+
+def flow_auswahl(ctx):
+    pg = open_app(ctx)
+    pg.evaluate("openRezepte('sammlung').then(()=>drawRezept('chili-pute'))"); pg.wait_for_timeout(700)
+    pg.click('text=Auf Einkaufsliste'); pg.wait_for_timeout(500); shot(pg, 'einkauf_auswahl')
+    rows = lambda: pg.eval_on_selector_all('.selrow', 'els => els.map(e => [e.querySelector(".shn").textContent, e.getAttribute("aria-checked"), (e.querySelector(".selsub")||{}).textContent||"", e.querySelector(".shq").textContent])')
+    r = rows()
+    check('Auf die Einkaufsliste' in pg.inner_text('.selhead') and 'Chili con Carne · 4 Portionen' in pg.inner_text('.selhead'), 'Kopf mit Rezept und Portionen')
+    check(['Basmatireis', 'false', 'Vorrat', '240 g'] in r and ['Olivenöl', 'false', 'Vorrat', '2 TL'] in r, 'Vorrat vorab abgewählt und gekennzeichnet')
+    check(['Paprika', 'true', '+ 3 Stück schon auf der Liste', '2 Stück'] in r, 'Hinweis: schon offen auf der Liste')
+    check(pg.inner_text('.selgo .btn') == '6 Zutaten übernehmen' and pg.inner_text('.selbar .hbtn') == 'Alle', 'Button mit Anzahl, „Alle“')
+    pg.click('.selrow:has(.shn:text-is("Mais (abgetropft)"))'); check(pg.inner_text('.selgo .btn') == '5 Zutaten übernehmen', 'Abwählen zählt live')
+    pg.click('.selbar .hbtn'); check(pg.inner_text('.selgo .btn') == '8 Zutaten übernehmen' and pg.inner_text('.selbar .hbtn') == 'Keine', '„Alle“ wählt alle, heißt dann „Keine“')
+    pg.click('.selbar .hbtn'); check(pg.is_disabled('.selgo .btn') and pg.inner_text('.selgo .btn') == '0 Zutaten übernehmen', 'Bei 0 deaktiviert')
+    for n in ['Putenhack', 'Paprika', 'Zwiebel', 'Gehackte Tomaten', 'Kidneybohnen (abgetropft)']: pg.click(f'.selrow:has(.shn:text-is("{n}"))')
+    b = pg.query_selector('.selgo .btn').bounding_box(); check(b['y'] + b['height'] <= 844, 'Übernehmen-Button sichtbar')
+    pg.click('.selgo .btn'); pg.wait_for_timeout(600)
+    check(toast(pg) == '5 Zutaten auf der Einkaufsliste' and pg.query_selector('.rzname') is not None, 'Toast, zurück im Rezept')
+    pg.evaluate("openShop()"); pg.wait_for_timeout(600)
+    names = pg.eval_on_selector_all('.shrow', 'els => els.map(e => e.querySelector(".shn").textContent + " " + e.querySelector(".shq").textContent)')
+    check('Paprika 5 Stück' in names and not any(n.startswith('Mais') or n.startswith('Basmatireis') for n in names), 'Nur Ausgewähltes übernommen, mit vorhandenem zusammengerechnet')
     return pg
 
 def flow_shopstate(ctx):
@@ -748,6 +770,7 @@ def flow_umbruch(ctx):
       ('menge', "openPicker({mode:'log',slot:'mittag',title:'Mittagessen'}).then(()=>drawAmount(1))"), ('gewicht', "S.tab='koerper';render().then(()=>openWeight())"),
       ('masse', "openMeasure()"), ('rezepte', "S.tab='essen';render().then(()=>openRezepte('sammlung'))"), ('rezept', "openRezepte('sammlung').then(()=>drawRezept('chili-pute'))"),
       ('einkauf', "S.tab='essen';render().then(()=>loadSammlung()).then(()=>shopFromRecipe('chili-pute',4)).then(()=>openShop())"),
+      ('einkauf_auswahl', "openRezepte('sammlung').then(()=>drawRezept('chili-pute')).then(()=>shopSelect('chili-pute',4))"),
       ('einheit_fortschritt', "S.tab='training';render().then(()=>openWo(Object.keys(S.wos).at(-1)))"), ('rueckgaengig', "S.tab='essen';render().then(()=>undoBar('Hähnchen-Reis-Bowl mit Gemüse gelöscht',null,null))")]
     pg.evaluate("S.day=addDays(today(),-3);S.tab='heute';render()"); pg.wait_for_timeout(500)
     check('Ganzkörper A' in pg.inner_text('.tile .tname'), 'Kachel zeigt langen Trainingsnamen')
@@ -799,7 +822,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_shopstate, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_einkauf, flow_auswahl, flow_shopstate, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():
