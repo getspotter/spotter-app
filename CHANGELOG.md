@@ -3,6 +3,7 @@
 ## 1.7 – 20.11.2026
 - Design: Entwürfe 1.7 und Rezeptsammlung (daten/rezepte.json, 12 Rezepte)
 - Training: Fortschritt pro Übung – Detail einer Einheit mit „Übungen verbessert“ (mehr kg, bei gleichem Gewicht mehr Wdh., Körpergewicht nur Wdh., erste Einheit zählt nicht, ohne Aufwärmsätze), Satz-Chips, Dauer; „Bestwerte“ in der Übersicht nach derselben Regel; Dauer wird gespeichert (dauer_min)
+- Suche: Open Food Facts auf Deutschland eingegrenzt und nach Beliebtheit sortiert, 20 Treffer, nur nötige Felder; eigene und zuletzt genutzte zuerst; Eingabe entprellt (300 ms), laufende Anfrage wird abgebrochen, Zeitlimit 6 s mit Hinweis
 
 ## 1.6.1.1 – 18.10.2026
 - Einheit: Tipp auf die Satznummer („W“, „1“, „2“ …, 44 × 44 px) öffnet ein Menü mit „Satz löschen“, danach „Satz gelöscht“ mit Rückgängig; Nummern rücken nach

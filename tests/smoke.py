@@ -266,6 +266,37 @@ def flow_rueckgaengig(ctx):
     check(not dialogs, 'Keine Nachfrage-Dialoge beim Löschen')
     return pg
 
+def flow_off_suche(ctx):
+    import json as _j
+    pg = open_app(ctx)
+    reqs = []
+    prods = [{'code': '1', 'product_name_de': 'Kölln Haferflocken zart', 'brands': 'Kölln', 'nutriments': {'energy-kcal_100g': 372, 'proteins_100g': 13.5, 'carbohydrates_100g': 58.7, 'fat_100g': 7}},
+             {'code': '2', 'product_name_de': 'Haferflocken', 'nutriments': {'energy-kcal_100g': 370}}]
+    def off(route):
+        reqs.append(route.request.url)
+        route.fulfill(status=200, content_type='application/json', body=_j.dumps({'products': prods}))
+    pg.route('**/cgi/search.pl*', off)
+    pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(400); pg.click('.fsearch'); pg.wait_for_timeout(500)
+    pg.type('#pq', 'Hafer', delay=60); pg.wait_for_timeout(900); shot(pg, 'suche_off')
+    check(len(reqs) == 1, 'Entprellt: eine Anfrage für die ganze Eingabe')
+    u = reqs[0] if reqs else ''
+    check(all(x in u for x in ['sort_by=unique_scans_n', 'tag_0=germany', 'page_size=20', 'fields=']), 'Anfrage: Deutschland, nach Beliebtheit, kleine Seite, nur nötige Felder')
+    labels = pg.eval_on_selector_all('#pres .lbl', 'els => els.map(e => e.textContent)')
+    names = pg.eval_on_selector_all('.fname .t', 'els => els.map(e => e.textContent)')
+    check(labels[:1] == ['Eigene und zuletzt verwendete'] and names[0] == 'Haferflocken' and names.count('Haferflocken') == 1 and 'Kölln Haferflocken zart' in names, 'Eigene zuerst, dann Open Food Facts ohne Doppelte')
+    # Zeitlimit: Anfrage hängt, eigene Treffer bleiben, Hinweis erscheint
+    hang = []; pg.unroute('**/cgi/search.pl*'); pg.route('**/cgi/search.pl*', lambda route: (reqs.append('haengt'), hang.append(route)))
+    pg.evaluate("window.OFF_TIMEOUT = 400"); pg.fill('#pq', ''); pg.type('#pq', 'Skyr', delay=30); pg.wait_for_timeout(1200)
+    check('antwortet gerade nicht' in pg.inner_text('#pres') and pg.inner_text('.fname .t >> nth=0') == 'Skyr', 'Zeitlimit: Hinweis, eigene Treffer bleiben sichtbar')
+    # Offline: keine Anfrage, eigene Treffer, Hinweis
+    n = len(reqs); ctx.set_offline(True); pg.evaluate("window.dispatchEvent(new Event('offline'))")
+    pg.fill('#pq', ''); pg.type('#pq', 'Hähnchen', delay=30); pg.wait_for_timeout(700)
+    check(len(reqs) == n and 'Offline' in pg.inner_text('#pres') and pg.query_selector('.fname') is not None, 'Offline: keine Anfrage, eigene Treffer und Hinweis')
+    for r in hang:
+        try: r.abort()
+        except Exception: pass
+    pg.unroute('**/cgi/search.pl*'); ctx.set_offline(False); close(pg); return pg
+
 def flow_essen_teilen(ctx):
     pg = open_app(ctx)
     check(pg.query_selector('.sharein') is not None, 'Geschickte Mahlzeit erscheint')
@@ -654,7 +685,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():

@@ -169,6 +169,7 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .sfield input:focus{border:0}
 .sscan{flex:none;width:52px;height:52px;border:0;border-radius:var(--r-btn);background:var(--soft);color:var(--ink);display:flex;align-items:center;justify-content:center}
 .sscan.on{background:var(--ink);color:var(--bg)}
+.snote{margin-top:12px;font-size:14px}
 .frow{display:flex;align-items:center;gap:8px;min-height:60px;padding:0 8px 0 0;border-bottom:1px solid var(--line)}
 .frow:last-child{border-bottom:0}
 .fname{flex:1;min-width:0;display:flex;flex-direction:column;border:0;background:none;color:inherit;text-align:left;padding:8px 0 8px 16px;align-self:stretch;justify-content:center}
@@ -1754,17 +1755,49 @@ function drawPicker(){
   openSheet(h, P.noanim); P.noanim = false;
   basketBar();
   if (P.tab === 'scan') startScan();
-  if (P.tab === 'suche' && P.lib){ if (P.q) liveSearch(P.q, P.results); else showLib(); }
+  if (P.tab === 'suche' && P.lib){ if (P.q) renderSearch(); else showLib(); }
   if (P.tab === 'eigen' && P.lib) showResults([['Eigene Lebensmittel', P.lib.filter(f => f.src !== 'zuletzt')]], 'Noch keine eigenen Lebensmittel. Lege unten eins an.');
 }
-function liveSearch(v, extra){
-  P.q = v.trim(); const t = P.q.toLowerCase();
-  if (!t){ P.results = []; return showLib(); }
-  const local = (P.lib || []).filter(f => f.name.toLowerCase().includes(t)).sort((a, b) => b.last.localeCompare(a.last));
-  showResults([['', extra && extra.length ? extra : local]]);
+// Suche: eigene und zuletzt genutzte sofort (sortiert nach Mahlzeit), Open Food Facts entprellt (300 ms),
+// laufende Anfrage wird bei neuer Eingabe abgebrochen, Zeitlimit 6 s.
+const OFF_MSG = 'Die Lebensmitteldatenbank antwortet gerade nicht. Scanne den Barcode oder versuch es gleich nochmal.';
+let OFFQ = { t: null, ctl: null, n: 0 };
+function liveSearch(v){
+  P.q = v.trim(); clearTimeout(OFFQ.t); if (OFFQ.ctl) OFFQ.ctl.abort(); OFFQ.n++;
+  if (!P.q){ P.off = null; P.results = []; return showLib(); }
+  P.off = { state: navigator.onLine ? 'wait' : 'offline', list: [] }; renderSearch();
+  if (navigator.onLine && P.q.length >= 2) OFFQ.t = setTimeout(() => offSearch(P.q), 300);
 }
+function localHits(t){
+  const sl = P.mode === 'log' ? P.slot : null;
+  return (P.lib || []).filter(f => f.name.toLowerCase().includes(t)).sort((a, b) => (sl ? (b.slots[sl] || 0) - (a.slots[sl] || 0) : 0) || b.last.localeCompare(a.last));
+}
+function renderSearch(){
+  const local = localHits(P.q.toLowerCase()), o = P.off || {}, names = new Set(local.map(f => f.name.toLowerCase()));
+  const off = (o.list || []).filter(f => !names.has(f.name.toLowerCase()));
+  const note = o.state === 'offline' ? 'Offline: nur eigene und zuletzt verwendete Lebensmittel.' : o.state === 'wait' ? 'Suche in der Lebensmitteldatenbank …' : o.state === 'fail' ? OFF_MSG : '';
+  showResults([[local.length ? 'Eigene und zuletzt verwendete' : '', local], ['Open Food Facts', off]], o.state === 'done' ? '' : ' ', note);
+}
+async function offSearch(term){
+  if (OFFQ.ctl) OFFQ.ctl.abort();
+  const ctl = new AbortController(), my = ++OFFQ.n; OFFQ.ctl = ctl; let late = false;
+  const timer = setTimeout(() => { late = true; ctl.abort(); }, window.OFF_TIMEOUT || 6000);
+  try {
+    // Deutschland, nach Beliebtheit (Anzahl Scans), nur nötige Felder, kleine Seite
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=20&sort_by=unique_scans_n&tagtype_0=countries&tag_contains_0=contains&tag_0=germany&lc=de&cc=de&fields=${OFF_FIELDS}`;
+    const res = await fetch(url, { signal: ctl.signal }); if (!res.ok) throw new Error('Status ' + res.status);
+    const js = await res.json();
+    if (my !== OFFQ.n) return;
+    P.off = { state: 'done', list: (js.products || []).map(offMap).filter(Boolean) };
+  } catch (e) {
+    if (my !== OFFQ.n && !late) return;              // abgebrochen durch neue Eingabe
+    P.off = { state: 'fail', list: [] };
+  } finally { clearTimeout(timer); }
+  if (P.q === term && P.tab === 'suche') renderSearch();
+}
+function doSearch(){ liveSearch($('#pq').value); clearTimeout(OFFQ.t); if (P.q && navigator.onLine) offSearch(P.q); }
 function amountText(f){ const g = r0(f.serving || 100); return `${fmt(g)} g · ${fmt(scale(f.per, g).kcal)} kcal`; }
-function showResults(sections, empty){
+function showResults(sections, empty, note){
   const el = $('#pres'); if (!el) return;
   P.results = sections.flatMap(s => s[1]);
   const inB = n => P.basket.some(b => b.name === n);
@@ -1772,7 +1805,8 @@ function showResults(sections, empty){
   const body = sections.filter(s => s[1].length).map(([title, list]) => (title ? `<div class="lbl" style="margin:16px 4px 8px">${esc(title)}</div>` : '') + '<div class="list">' + list.map(f => { const k = i++;
     return `<div class="frow"><button class="fname" onclick="drawAmount(${k})"><span class="t">${esc(f.name)}</span><span class="s">${f.brand ? esc(f.brand) + ' · ' : ''}${amountText(f)}</span></button>
       <button class="qplus ${inB(f.name) ? 'in' : ''}" aria-label="${inB(f.name) ? esc(f.name) + ' aus dem Korb nehmen' : esc(f.name) + ' in den Korb'}" onclick="quickAdd(${k})">${inB(f.name) ? I_CHECK : I_PLUS}</button></div>`; }).join('') + '</div>').join('');
-  el.innerHTML = body || `<div class="note">${empty || 'Nichts gefunden. Drück auf Suchen in der Tastatur, dann wird auch Open Food Facts durchsucht.'}</div>`;
+  const nt = note ? `<div class="note snote" role="status">${esc(note)}</div>` : '';
+  el.innerHTML = body ? body + nt : nt || (empty && !empty.trim() ? '' : `<div class="note">${empty || 'Nichts gefunden. Versuche einen anderen Begriff oder lege das Lebensmittel unter Eigene an.'}</div>`);
 }
 // Schnell-Plus: legt mit der zuletzt verwendeten Menge in den Korb, zweiter Tipp nimmt es wieder heraus
 function quickAdd(k){
@@ -1861,22 +1895,6 @@ function offMap(p){
     per: { kcal, p: num(n.proteins_100g), c: num(n.carbohydrates_100g), f: num(n.fat_100g) }, serving: num(p.serving_quantity) || 0, portion: num(p.serving_quantity) || 0, src:'off' };
 }
 const OFF_FIELDS = 'code,product_name,product_name_de,brands,nutriments,serving_quantity';
-async function doSearch(){
-  const term = $('#pq').value.trim(); if (!term) return;
-  P.q = term;
-  const t = term.toLowerCase();
-  const local = (P.lib || []).filter(f => f.name.toLowerCase().includes(t));
-  showResults([[navigator.onLine ? 'Suche bei Open Food Facts …' : 'Offline: nur eigene und zuletzt verwendete', local]]);
-  if (!navigator.onLine) return;
-  try {
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(term)}&search_simple=1&action=process&json=1&page_size=25&cc=de&lc=de&fields=${OFF_FIELDS}`;
-    const res = await fetch(url); if (!res.ok) throw new Error('Status ' + res.status);
-    const js = await res.json();
-    showResults([['', [...local, ...(js.products || []).map(offMap).filter(Boolean)]]]);
-  } catch (e) {
-    showResults([['Open Food Facts ist gerade nicht erreichbar', local]]);
-  }
-}
 const saveOwnFood = run(async () => {
   const name = $('#en').value.trim(); const per = { kcal: num($('#ek').value), p: num($('#ep').value), c: num($('#ec').value), f: num($('#ef').value) };
   if (!name || !per.kcal) return toast('Name und kcal sind nötig');
