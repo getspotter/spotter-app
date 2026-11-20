@@ -1,0 +1,1106 @@
+{
+  "version": 1,
+  "stand": "2026-11",
+  "hinweis": "Nährwerte sind Richtwerte aus typischen Packungsangaben, gerechnet mit Rohgewichten. Salz und Gewürze ohne Nährwerte.",
+  "kategorien": {
+    "fruehstueck": "Frühstück",
+    "hauptgericht": "Mittag & Abend",
+    "mealprep": "Mealprep"
+  },
+  "rezepte": [
+    {
+      "id": "overnight-oats",
+      "name": "Protein-Overnight-Oats mit Skyr und Beeren",
+      "kategorie": "fruehstueck",
+      "portionen": 1,
+      "zeit_aktiv_min": 5,
+      "zeit_gesamt_min": 5,
+      "tags": [
+        "am Vorabend"
+      ],
+      "zutaten": [
+        {
+          "name": "Haferflocken",
+          "menge": 50,
+          "einheit": "g",
+          "gramm": 50,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 370,
+            "protein": 13.5,
+            "kohlenhydrate": 58.7,
+            "fett": 7.0
+          }
+        },
+        {
+          "name": "Skyr natur",
+          "menge": 200,
+          "einheit": "g",
+          "gramm": 200,
+          "abteilung": "Kühlregal",
+          "pro_100g": {
+            "kcal": 63,
+            "protein": 11.0,
+            "kohlenhydrate": 4.0,
+            "fett": 0.2
+          }
+        },
+        {
+          "name": "Milch 1,5 %",
+          "menge": 100,
+          "einheit": "ml",
+          "gramm": 100,
+          "abteilung": "Kühlregal",
+          "pro_100g": {
+            "kcal": 47,
+            "protein": 3.4,
+            "kohlenhydrate": 4.8,
+            "fett": 1.5
+          }
+        },
+        {
+          "name": "Beeren (TK)",
+          "menge": 80,
+          "einheit": "g",
+          "gramm": 80,
+          "abteilung": "Tiefkühl",
+          "pro_100g": {
+            "kcal": 42,
+            "protein": 0.8,
+            "kohlenhydrate": 7.0,
+            "fett": 0.4
+          }
+        }
+      ],
+      "schritte": [
+        "Haferflocken, Skyr und Milch in einem Glas verrühren.",
+        "Beeren obendrauf geben, abdecken und über Nacht in den Kühlschrank stellen.",
+        "Morgens kalt essen oder kurz umrühren."
+      ],
+      "pro_portion": {
+        "kcal": 392,
+        "protein": 33,
+        "kohlenhydrate": 48,
+        "fett": 6
+      }
+    },
+    {
+      "id": "ruehrei-wrap",
+      "name": "Rührei-Wrap mit Hüttenkäse und Spinat",
+      "kategorie": "fruehstueck",
+      "portionen": 1,
+      "zeit_aktiv_min": 10,
+      "zeit_gesamt_min": 10,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Eier",
+          "menge": 3,
+          "einheit": "Stück",
+          "gramm": 165,
+          "abteilung": "Kühlregal",
+          "pro_100g": {
+            "kcal": 137,
+            "protein": 12.5,
+            "kohlenhydrate": 0.7,
+            "fett": 9.3
+          }
+        },
+        {
+          "name": "Hüttenkäse",
+          "menge": 100,
+          "einheit": "g",
+          "gramm": 100,
+          "abteilung": "Kühlregal",
+          "pro_100g": {
+            "kcal": 98,
+            "protein": 12.3,
+            "kohlenhydrate": 2.6,
+            "fett": 4.3
+          }
+        },
+        {
+          "name": "Vollkorn-Wrap",
+          "menge": 1,
+          "einheit": "Stück",
+          "gramm": 62,
+          "abteilung": "Brot & Backwaren",
+          "pro_100g": {
+            "kcal": 300,
+            "protein": 9.0,
+            "kohlenhydrate": 48.0,
+            "fett": 7.0
+          }
+        },
+        {
+          "name": "Babyspinat",
+          "menge": 50,
+          "einheit": "g",
+          "gramm": 50,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 23,
+            "protein": 2.5,
+            "kohlenhydrate": 0.6,
+            "fett": 0.4
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 1,
+          "einheit": "TL",
+          "gramm": 5,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Öl in der Pfanne erhitzen, Spinat kurz zusammenfallen lassen.",
+        "Eier verquirlen, dazugeben und unter Rühren stocken lassen. Salzen und pfeffern.",
+        "Wrap kurz in der trockenen Pfanne erwärmen, Hüttenkäse und Rührei darauf verteilen, einrollen."
+      ],
+      "pro_portion": {
+        "kcal": 566,
+        "protein": 40,
+        "kohlenhydrate": 34,
+        "fett": 29
+      }
+    },
+    {
+      "id": "skyr-bowl",
+      "name": "Skyr-Bowl mit Banane und Walnüssen",
+      "kategorie": "fruehstueck",
+      "portionen": 1,
+      "zeit_aktiv_min": 3,
+      "zeit_gesamt_min": 3,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Skyr natur",
+          "menge": 300,
+          "einheit": "g",
+          "gramm": 300,
+          "abteilung": "Kühlregal",
+          "pro_100g": {
+            "kcal": 63,
+            "protein": 11.0,
+            "kohlenhydrate": 4.0,
+            "fett": 0.2
+          }
+        },
+        {
+          "name": "Banane",
+          "menge": 1,
+          "einheit": "Stück",
+          "gramm": 120,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 93,
+            "protein": 1.2,
+            "kohlenhydrate": 20.0,
+            "fett": 0.2
+          }
+        },
+        {
+          "name": "Walnüsse",
+          "menge": 15,
+          "einheit": "g",
+          "gramm": 15,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 654,
+            "protein": 15.2,
+            "kohlenhydrate": 7.0,
+            "fett": 65.0
+          }
+        }
+      ],
+      "schritte": [
+        "Skyr in eine Schüssel geben.",
+        "Banane in Scheiben schneiden, Walnüsse grob hacken, beides darüber geben."
+      ],
+      "pro_portion": {
+        "kcal": 399,
+        "protein": 37,
+        "kohlenhydrate": 37,
+        "fett": 11
+      }
+    },
+    {
+      "id": "quarkbrot-lachs",
+      "name": "Vollkornbrot mit Quark, Räucherlachs und Gurke",
+      "kategorie": "fruehstueck",
+      "portionen": 1,
+      "zeit_aktiv_min": 5,
+      "zeit_gesamt_min": 5,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Vollkornbrot",
+          "menge": 2,
+          "einheit": "Scheiben",
+          "gramm": 100,
+          "abteilung": "Brot & Backwaren",
+          "pro_100g": {
+            "kcal": 210,
+            "protein": 7.0,
+            "kohlenhydrate": 38.0,
+            "fett": 1.5
+          }
+        },
+        {
+          "name": "Magerquark",
+          "menge": 150,
+          "einheit": "g",
+          "gramm": 150,
+          "abteilung": "Kühlregal",
+          "pro_100g": {
+            "kcal": 67,
+            "protein": 12.0,
+            "kohlenhydrate": 4.0,
+            "fett": 0.2
+          }
+        },
+        {
+          "name": "Räucherlachs",
+          "menge": 75,
+          "einheit": "g",
+          "gramm": 75,
+          "abteilung": "Kühlregal",
+          "pro_100g": {
+            "kcal": 185,
+            "protein": 21.0,
+            "kohlenhydrate": 0.0,
+            "fett": 11.0
+          }
+        },
+        {
+          "name": "Gurke",
+          "menge": 100,
+          "einheit": "g",
+          "gramm": 100,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 12,
+            "protein": 0.6,
+            "kohlenhydrate": 1.8,
+            "fett": 0.2
+          }
+        }
+      ],
+      "schritte": [
+        "Magerquark mit Salz, Pfeffer und etwas Wasser glatt rühren.",
+        "Brot dick mit Quark bestreichen.",
+        "Gurke in Scheiben schneiden, mit dem Lachs auf das Brot legen."
+      ],
+      "pro_portion": {
+        "kcal": 461,
+        "protein": 41,
+        "kohlenhydrate": 46,
+        "fett": 10
+      }
+    },
+    {
+      "id": "haehnchen-reis-pfanne",
+      "name": "Hähnchen-Reis-Pfanne mit Paprika",
+      "kategorie": "hauptgericht",
+      "portionen": 2,
+      "zeit_aktiv_min": 20,
+      "zeit_gesamt_min": 20,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Hähnchenbrust",
+          "menge": 300,
+          "einheit": "g",
+          "gramm": 300,
+          "abteilung": "Fleisch & Fisch",
+          "pro_100g": {
+            "kcal": 105,
+            "protein": 23.5,
+            "kohlenhydrate": 0.0,
+            "fett": 1.2
+          }
+        },
+        {
+          "name": "Basmatireis",
+          "menge": 150,
+          "einheit": "g",
+          "gramm": 150,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 350,
+            "protein": 7.5,
+            "kohlenhydrate": 77.0,
+            "fett": 0.6
+          }
+        },
+        {
+          "name": "Paprika",
+          "menge": 2,
+          "einheit": "Stück",
+          "gramm": 300,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.0,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück",
+          "gramm": 80,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.2,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "TL",
+          "gramm": 10,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Reis nach Packung kochen.",
+        "Hähnchen in Streifen schneiden, in Öl rundum anbraten, salzen und pfeffern.",
+        "Zwiebel und Paprika klein schneiden, 5 Minuten mitbraten.",
+        "Reis unterheben, mit Paprikapulver abschmecken."
+      ],
+      "pro_portion": {
+        "kcal": 521,
+        "protein": 43,
+        "kohlenhydrate": 67,
+        "fett": 8
+      }
+    },
+    {
+      "id": "thunfisch-pasta",
+      "name": "Thunfisch-Tomaten-Pasta",
+      "kategorie": "hauptgericht",
+      "portionen": 2,
+      "zeit_aktiv_min": 15,
+      "zeit_gesamt_min": 15,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Vollkornnudeln",
+          "menge": 160,
+          "einheit": "g",
+          "gramm": 160,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 345,
+            "protein": 13.0,
+            "kohlenhydrate": 62.0,
+            "fett": 2.5
+          }
+        },
+        {
+          "name": "Thunfisch (eigener Saft)",
+          "menge": 2,
+          "einheit": "Dosen",
+          "gramm": 280,
+          "abteilung": "Konserven",
+          "pro_100g": {
+            "kcal": 116,
+            "protein": 26.0,
+            "kohlenhydrate": 0.0,
+            "fett": 1.0
+          }
+        },
+        {
+          "name": "Passierte Tomaten",
+          "menge": 1,
+          "einheit": "Packung (400 g)",
+          "gramm": 400,
+          "abteilung": "Konserven",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.4,
+            "kohlenhydrate": 4.5,
+            "fett": 0.2
+          }
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück",
+          "gramm": 80,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.2,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "TL",
+          "gramm": 10,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Nudeln nach Packung kochen.",
+        "Zwiebel würfeln und in Öl glasig dünsten.",
+        "Passierte Tomaten dazugeben, 5 Minuten köcheln, mit Salz, Pfeffer und Oregano würzen.",
+        "Thunfisch abtropfen, unterheben, nur kurz erwärmen. Mit den Nudeln mischen."
+      ],
+      "pro_portion": {
+        "kcal": 555,
+        "protein": 50,
+        "kohlenhydrate": 61,
+        "fett": 9
+      }
+    },
+    {
+      "id": "putengeschnetzeltes",
+      "name": "Putengeschnetzeltes mit Champignons und Reis",
+      "kategorie": "hauptgericht",
+      "portionen": 2,
+      "zeit_aktiv_min": 20,
+      "zeit_gesamt_min": 20,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Putenbrust",
+          "menge": 300,
+          "einheit": "g",
+          "gramm": 300,
+          "abteilung": "Fleisch & Fisch",
+          "pro_100g": {
+            "kcal": 107,
+            "protein": 24.0,
+            "kohlenhydrate": 0.0,
+            "fett": 1.0
+          }
+        },
+        {
+          "name": "Champignons",
+          "menge": 250,
+          "einheit": "g",
+          "gramm": 250,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 22,
+            "protein": 3.0,
+            "kohlenhydrate": 0.6,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Basmatireis",
+          "menge": 150,
+          "einheit": "g",
+          "gramm": 150,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 350,
+            "protein": 7.5,
+            "kohlenhydrate": 77.0,
+            "fett": 0.6
+          }
+        },
+        {
+          "name": "Kochsahne 15 %",
+          "menge": 80,
+          "einheit": "ml",
+          "gramm": 80,
+          "abteilung": "Kühlregal",
+          "pro_100g": {
+            "kcal": 158,
+            "protein": 2.9,
+            "kohlenhydrate": 4.0,
+            "fett": 15.0
+          }
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück",
+          "gramm": 80,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.2,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "TL",
+          "gramm": 10,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Reis nach Packung kochen.",
+        "Pute in Streifen schneiden, in Öl kräftig anbraten, herausnehmen.",
+        "Zwiebel und Champignons in Scheiben in derselben Pfanne braten.",
+        "Kochsahne und etwas Wasser angießen, Fleisch zurückgeben, 3 Minuten ziehen lassen, würzen."
+      ],
+      "pro_portion": {
+        "kcal": 570,
+        "protein": 47,
+        "kohlenhydrate": 62,
+        "fett": 13
+      }
+    },
+    {
+      "id": "ofenlachs",
+      "name": "Ofenlachs mit Kartoffeln und Brokkoli",
+      "kategorie": "hauptgericht",
+      "portionen": 2,
+      "zeit_aktiv_min": 10,
+      "zeit_gesamt_min": 35,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Lachsfilet",
+          "menge": 2,
+          "einheit": "Filets",
+          "gramm": 250,
+          "abteilung": "Fleisch & Fisch",
+          "pro_100g": {
+            "kcal": 200,
+            "protein": 20.0,
+            "kohlenhydrate": 0.0,
+            "fett": 13.5
+          }
+        },
+        {
+          "name": "Kartoffeln",
+          "menge": 500,
+          "einheit": "g",
+          "gramm": 500,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 72,
+            "protein": 2.0,
+            "kohlenhydrate": 15.0,
+            "fett": 0.1
+          }
+        },
+        {
+          "name": "Brokkoli",
+          "menge": 1,
+          "einheit": "Kopf",
+          "gramm": 400,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 34,
+            "protein": 2.8,
+            "kohlenhydrate": 2.7,
+            "fett": 0.4
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "TL",
+          "gramm": 10,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Ofen auf 200 °C Umluft vorheizen.",
+        "Kartoffeln vierteln, mit der Hälfte des Öls, Salz und Rosmarin aufs Blech geben, 15 Minuten backen.",
+        "Brokkoli in Röschen und Lachs dazulegen, mit restlichem Öl beträufeln und würzen.",
+        "Weitere 12–15 Minuten backen, bis der Lachs gar ist."
+      ],
+      "pro_portion": {
+        "kcal": 542,
+        "protein": 36,
+        "kohlenhydrate": 43,
+        "fett": 23
+      }
+    },
+    {
+      "id": "chili-pute",
+      "name": "Chili con Carne mit Putenhack und Reis",
+      "kategorie": "mealprep",
+      "portionen": 4,
+      "zeit_aktiv_min": 20,
+      "zeit_gesamt_min": 40,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Putenhack",
+          "menge": 500,
+          "einheit": "g",
+          "gramm": 500,
+          "abteilung": "Fleisch & Fisch",
+          "pro_100g": {
+            "kcal": 140,
+            "protein": 20.0,
+            "kohlenhydrate": 0.0,
+            "fett": 6.5
+          }
+        },
+        {
+          "name": "Kidneybohnen (abgetropft)",
+          "menge": 2,
+          "einheit": "Dosen",
+          "gramm": 500,
+          "abteilung": "Konserven",
+          "pro_100g": {
+            "kcal": 95,
+            "protein": 7.0,
+            "kohlenhydrate": 13.0,
+            "fett": 0.5
+          }
+        },
+        {
+          "name": "Mais (abgetropft)",
+          "menge": 1,
+          "einheit": "Dose",
+          "gramm": 140,
+          "abteilung": "Konserven",
+          "pro_100g": {
+            "kcal": 80,
+            "protein": 2.9,
+            "kohlenhydrate": 13.0,
+            "fett": 1.2
+          }
+        },
+        {
+          "name": "Gehackte Tomaten",
+          "menge": 2,
+          "einheit": "Dosen",
+          "gramm": 800,
+          "abteilung": "Konserven",
+          "pro_100g": {
+            "kcal": 22,
+            "protein": 1.2,
+            "kohlenhydrate": 3.5,
+            "fett": 0.2
+          }
+        },
+        {
+          "name": "Paprika",
+          "menge": 2,
+          "einheit": "Stück",
+          "gramm": 300,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.0,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 2,
+          "einheit": "Stück",
+          "gramm": 160,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.2,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Basmatireis",
+          "menge": 240,
+          "einheit": "g",
+          "gramm": 240,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 350,
+            "protein": 7.5,
+            "kohlenhydrate": 77.0,
+            "fett": 0.6
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "TL",
+          "gramm": 10,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Reis nach Packung kochen.",
+        "Zwiebeln und Paprika würfeln. Hack in Öl krümelig anbraten, Gemüse kurz mitbraten.",
+        "Tomaten, Bohnen und Mais dazugeben, mit Chili, Kreuzkümmel, Paprika und Salz würzen.",
+        "20 Minuten offen köcheln lassen. Mit Reis auf 4 Boxen verteilen, hält 4 Tage im Kühlschrank."
+      ],
+      "pro_portion": {
+        "kcal": 632,
+        "protein": 43,
+        "kohlenhydrate": 80,
+        "fett": 13
+      }
+    },
+    {
+      "id": "haehnchen-blech",
+      "name": "Hähnchen-Süßkartoffel-Blech mit Gemüse",
+      "kategorie": "mealprep",
+      "portionen": 4,
+      "zeit_aktiv_min": 15,
+      "zeit_gesamt_min": 45,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Hähnchenbrust",
+          "menge": 600,
+          "einheit": "g",
+          "gramm": 600,
+          "abteilung": "Fleisch & Fisch",
+          "pro_100g": {
+            "kcal": 105,
+            "protein": 23.5,
+            "kohlenhydrate": 0.0,
+            "fett": 1.2
+          }
+        },
+        {
+          "name": "Süßkartoffel",
+          "menge": 800,
+          "einheit": "g",
+          "gramm": 800,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 86,
+            "protein": 1.6,
+            "kohlenhydrate": 20.0,
+            "fett": 0.1
+          }
+        },
+        {
+          "name": "Brokkoli",
+          "menge": 1,
+          "einheit": "Kopf",
+          "gramm": 400,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 34,
+            "protein": 2.8,
+            "kohlenhydrate": 2.7,
+            "fett": 0.4
+          }
+        },
+        {
+          "name": "Paprika",
+          "menge": 2,
+          "einheit": "Stück",
+          "gramm": 300,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.0,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Zucchini",
+          "menge": 2,
+          "einheit": "Stück",
+          "gramm": 400,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 19,
+            "protein": 1.5,
+            "kohlenhydrate": 2.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 4,
+          "einheit": "TL",
+          "gramm": 20,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Ofen auf 200 °C Umluft vorheizen.",
+        "Süßkartoffel würfeln, mit der Hälfte des Öls und Gewürzen 10 Minuten vorbacken.",
+        "Hähnchen, Brokkoli, Paprika und Zucchini in Stücke schneiden, mit restlichem Öl, Salz, Paprika und Knoblauch mischen.",
+        "Alles aufs Blech, weitere 20–25 Minuten backen. Auf 4 Boxen verteilen."
+      ],
+      "pro_portion": {
+        "kcal": 449,
+        "protein": 44,
+        "kohlenhydrate": 48,
+        "fett": 8
+      }
+    },
+    {
+      "id": "rinderhack-bowl",
+      "name": "Rinderhack-Reis-Bowl mit Kidneybohnen",
+      "kategorie": "mealprep",
+      "portionen": 4,
+      "zeit_aktiv_min": 20,
+      "zeit_gesamt_min": 20,
+      "tags": [],
+      "zutaten": [
+        {
+          "name": "Rinderhack 5 %",
+          "menge": 500,
+          "einheit": "g",
+          "gramm": 500,
+          "abteilung": "Fleisch & Fisch",
+          "pro_100g": {
+            "kcal": 125,
+            "protein": 21.0,
+            "kohlenhydrate": 0.0,
+            "fett": 4.5
+          }
+        },
+        {
+          "name": "Basmatireis",
+          "menge": 240,
+          "einheit": "g",
+          "gramm": 240,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 350,
+            "protein": 7.5,
+            "kohlenhydrate": 77.0,
+            "fett": 0.6
+          }
+        },
+        {
+          "name": "Kidneybohnen (abgetropft)",
+          "menge": 1,
+          "einheit": "Dose",
+          "gramm": 250,
+          "abteilung": "Konserven",
+          "pro_100g": {
+            "kcal": 95,
+            "protein": 7.0,
+            "kohlenhydrate": 13.0,
+            "fett": 0.5
+          }
+        },
+        {
+          "name": "Mais (abgetropft)",
+          "menge": 1,
+          "einheit": "Dose",
+          "gramm": 140,
+          "abteilung": "Konserven",
+          "pro_100g": {
+            "kcal": 80,
+            "protein": 2.9,
+            "kohlenhydrate": 13.0,
+            "fett": 1.2
+          }
+        },
+        {
+          "name": "Paprika",
+          "menge": 2,
+          "einheit": "Stück",
+          "gramm": 300,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.0,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück",
+          "gramm": 80,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.2,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "TL",
+          "gramm": 10,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Reis nach Packung kochen.",
+        "Hack in Öl krümelig braten, Zwiebel und Paprika gewürfelt mitbraten.",
+        "Bohnen und Mais unterheben, mit Kreuzkümmel, Paprika, Salz würzen.",
+        "Reis und Hackpfanne auf 4 Boxen verteilen."
+      ],
+      "pro_portion": {
+        "kcal": 504,
+        "protein": 37,
+        "kohlenhydrate": 64,
+        "fett": 10
+      }
+    },
+    {
+      "id": "linsen-bolognese",
+      "name": "Linsen-Bolognese mit Vollkornpasta",
+      "kategorie": "mealprep",
+      "portionen": 4,
+      "zeit_aktiv_min": 25,
+      "zeit_gesamt_min": 25,
+      "tags": [
+        "vegetarisch"
+      ],
+      "zutaten": [
+        {
+          "name": "Rote Linsen",
+          "menge": 250,
+          "einheit": "g",
+          "gramm": 250,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 330,
+            "protein": 25.0,
+            "kohlenhydrate": 49.0,
+            "fett": 1.4
+          }
+        },
+        {
+          "name": "Vollkornnudeln",
+          "menge": 320,
+          "einheit": "g",
+          "gramm": 320,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 345,
+            "protein": 13.0,
+            "kohlenhydrate": 62.0,
+            "fett": 2.5
+          }
+        },
+        {
+          "name": "Gehackte Tomaten",
+          "menge": 2,
+          "einheit": "Dosen",
+          "gramm": 800,
+          "abteilung": "Konserven",
+          "pro_100g": {
+            "kcal": 22,
+            "protein": 1.2,
+            "kohlenhydrate": 3.5,
+            "fett": 0.2
+          }
+        },
+        {
+          "name": "Möhren",
+          "menge": 2,
+          "einheit": "Stück",
+          "gramm": 200,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 36,
+            "protein": 0.8,
+            "kohlenhydrate": 7.0,
+            "fett": 0.2
+          }
+        },
+        {
+          "name": "Zwiebel",
+          "menge": 1,
+          "einheit": "Stück",
+          "gramm": 80,
+          "abteilung": "Obst & Gemüse",
+          "pro_100g": {
+            "kcal": 30,
+            "protein": 1.2,
+            "kohlenhydrate": 5.0,
+            "fett": 0.3
+          }
+        },
+        {
+          "name": "Olivenöl",
+          "menge": 2,
+          "einheit": "TL",
+          "gramm": 10,
+          "abteilung": "Trockenware",
+          "pro_100g": {
+            "kcal": 884,
+            "protein": 0.0,
+            "kohlenhydrate": 0.0,
+            "fett": 100.0
+          }
+        }
+      ],
+      "schritte": [
+        "Nudeln nach Packung kochen.",
+        "Zwiebel und Möhren fein würfeln, in Öl 3 Minuten anbraten.",
+        "Linsen, Tomaten und 300 ml Wasser dazugeben, 15 Minuten köcheln, bis die Linsen weich sind.",
+        "Kräftig mit Salz, Pfeffer, Oregano würzen, mit den Nudeln auf 4 Boxen verteilen."
+      ],
+      "pro_portion": {
+        "kcal": 572,
+        "protein": 29,
+        "kohlenhydrate": 92,
+        "fett": 6
+      }
+    }
+  ]
+}
