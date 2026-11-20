@@ -70,6 +70,7 @@ h2{font-size:22px}h3{font-size:20px}
 .lvl{display:flex;align-items:center;gap:8px;background:var(--surface);border:0;border-radius:999px;padding:6px 14px 6px 6px;font-weight:700;font-size:13px;min-height:44px;white-space:nowrap}
 .lvl .lb{width:32px;height:32px;border-radius:16px;background:var(--accent);color:var(--on-accent);font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center}
 .lvl.empty{visibility:hidden}
+.lvl[hidden]{display:none}
 .who-wrap{max-width:560px;margin:10px auto 0}
 .who-wrap:empty{display:none}
 .who,.seg{display:flex;background:var(--surface);border-radius:14px;padding:4px;gap:4px}
@@ -267,6 +268,35 @@ body.fixbar main{padding-bottom:calc(190px + env(safe-area-inset-bottom,0px))}
 .wchips[hidden]{display:none}
 .wchip{background:var(--soft);border-radius:var(--r-sm);padding:2px 8px;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
 .wchip.warm{color:var(--muted)}
+
+/* Rezepte */
+.hact{display:flex;gap:8px;align-items:center}
+.hact:empty{display:none}
+.hbtn{min-height:44px;border:0;border-radius:999px;background:var(--surface);color:var(--ink);font-weight:800;padding:0 16px;display:flex;align-items:center;gap:6px;position:relative}
+.rzhead{margin-bottom:0}
+.rztitle{font-size:44px;margin:0 0 16px}
+.rzlh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:4px 4px 8px}
+.rzrow{min-height:72px;align-items:center}
+.rzn{font-size:15px;font-weight:800;line-height:1.25}
+.rzp{flex:none;display:flex;flex-direction:column;align-items:flex-end}
+.rzp span{font-size:12px;color:var(--muted)}
+.rzname{font-size:26px;margin-top:8px}
+.rzboard{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.rzpn{font-size:56px;line-height:.85;margin-top:8px}
+.rzmac{display:grid;grid-template-columns:repeat(3,minmax(0,auto));gap:16px}
+.rzzh{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:24px 0 12px}
+.rzzh h3{font-size:20px}
+.rzstep{background:var(--surface);min-height:52px;padding:4px;border-radius:var(--r-btn);gap:4px}
+.rzstep button{background:var(--soft)!important;border-radius:var(--r-sm)}
+.rzstep b{font-size:16px;font-stretch:100%;white-space:nowrap;padding:0 4px}
+.rzstep button{width:44px;height:44px}
+.rzstep button:disabled{opacity:.3}
+.rzz{min-height:44px;padding:8px 16px}
+.rzq{flex:none;width:92px;white-space:nowrap;font-weight:800}
+.rzsteps{margin:0;padding-left:24px;display:flex;flex-direction:column;gap:8px}
+.rzsteps li{padding-left:4px}
+.rzbar .btn.accent{flex:1}
+.rzbar #rzshop:empty{display:none}
 
 /* Abschnitte & Listen */
 .sec{margin:24px 0 8px}
@@ -587,7 +617,7 @@ body.fixbar #toast{bottom:calc(152px + env(safe-area-inset-bottom,0px))}
     </div>
     <h1 id="ttl">Heute</h1>
   </div>
-  <button class="lvl empty" id="lvl" onclick="openGame()" aria-label="Level und Abzeichen"></button>
+  <button class="lvl empty" id="lvl" onclick="openGame()" aria-label="Level und Abzeichen"></button><div class="hact" id="hact"></div>
 </div><div id="net" class="net-wrap"></div><div class="who-wrap" id="who"></div></header>
 <main id="view"></main>
 <nav class="tabs"><div class="tabs-in" id="tabs">
@@ -896,8 +926,11 @@ function renderHeader(){
     ? `<div class="who"><button class="${S.who==='me'?'on':''}" onclick="setWho('me')">Ich</button><button class="${S.who==='partner'?'on':''}" onclick="setWho('partner')">${esc(nameOf(S.partner))}</button></div>`
     : '';
   document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === S.tab));
+  const essen = S.tab === 'essen' && own();
+  $('#lvl').hidden = essen; $('#hact').innerHTML = essen ? headActions() : '';
   if (S.myGame) updateLvl(S.myGame);
 }
+function headActions(){ return `<button class="hbtn" onclick="openRezepte('sammlung')">Rezepte</button>`; }
 function longDay(s){ // Versalien per CSS: „FR · 16. OKT“
   const d = new Date(s + 'T12:00:00');
   return (s === addDays(today(), -1) ? 'Gestern' : WD[wd(s)]) + ' · ' + d.getDate() + '. ' + MON[d.getMonth()].replace('.', '');
@@ -1045,7 +1078,7 @@ function openPlan(){
     .sort((a, b) => SLOTS.findIndex(s => s[0] === a.data.slot) - SLOTS.findIndex(s => s[0] === b.data.slot));
   const logs = S.planLogs || [];
   openSheet(`<div class="sh-head"><h3>Plan für ${['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][wd(S.day)]}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
-    ${!plan.length ? '<div class="note">Für diesen Wochentag ist nichts geplant. Lege unter Essen eine Mahlzeiten-Vorlage an und wähle die Wochentage aus.</div>' : '<div class="list">' + plan.map(r => {
+    ${!plan.length ? '<div class="note">Für diesen Wochentag ist nichts geplant. Lege unter Essen → Rezepte ein Rezept an und wähle die Wochentage aus.</div>' : '<div class="list">' + plan.map(r => {
       const done = logs.find(l => l.data.recipe_id === r.id), t = recipeTotals(r, r.data.factor || 1);
       return `<div class="row ${done ? 'dim' : ''}"><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${slotName(r.data.slot)} · ${fmt(t.kcal)} kcal · ${fmt(t.p)} g Protein</div></div>
         ${done ? `<button class="btn sm done" onclick="planUndo('${done.id}')" aria-label="Abhaken rückgängig machen">✓</button>` : `<button class="btn sm" onclick="planDo('${r.id}')">Abhaken</button>`}</div>`;
@@ -1210,7 +1243,7 @@ function closeChangelog(){ try { localStorage.setItem('seenVersion', APP_VERSION
 function maybeChangelog(){ let seen = null; try { seen = localStorage.getItem('seenVersion'); } catch (e) {} if (seen !== APP_VERSION && !sheetOpen()) openChangelog(); }
 
 /* ================= Freigaben ================= */
-const SHARE = [['nutrition','Ernährung','Essen, Vorlagen, eigene Lebensmittel'],['training','Training','Trainingstage und Einheiten'],['weight','Gewicht','Gewichtseinträge und Verlauf'],['measure','Körpermaße','Taille, Hüfte und Co.'],['level','Level und Abzeichen','Level, Serie, Abzeichen']];
+const SHARE = [['nutrition','Ernährung','Essen, Rezepte, eigene Lebensmittel'],['training','Training','Trainingstage und Einheiten'],['weight','Gewicht','Gewichtseinträge und Verlauf'],['measure','Körpermaße','Taille, Hüfte und Co.'],['level','Level und Abzeichen','Level, Serie, Abzeichen']];
 const shares = (p, k) => p?.data?.share?.[k] !== false;
 const setShare = run(async (k, v) => {
   await saveProfile({ share: { ...(S.me.data.share || {}), [k]: v }, ...(k === 'level' && !v ? { game: null } : {}) });
@@ -1675,16 +1708,80 @@ async function rEssen(){
   }
   h += '</div>';
   if (mine) h += `<div class="list" style="margin-top:12px"><button class="row tap" onclick="openCopy()"><div class="grow"><div class="t">Essen von anderem Tag kopieren</div><div class="s">Ganze Mahlzeiten übernehmen, z. B. von gestern</div></div><span class="chev">${CHEV}</span></button></div>`;
-  const recs = Object.values(S.rc).filter(r => r.user_id === uid);
-  h += `<div class="sec"><div class="sec-h"><h2>Mahlzeiten-Vorlagen</h2>${mine ? `<button class="btn sm" onclick="openRecipe()">Neue Vorlage</button>` : ''}</div>`;
-  if (!recs.length) h += `<div class="note">${mine ? 'Vorlagen sind Mahlzeiten, die du öfter isst. Weise sie Wochentagen zu, dann erscheinen sie unter Heute zum Abhaken.' : 'Noch keine Vorlagen.'}</div>`;
-  else h += '<div class="list">' + recs.map(r => { const t = recipeTotals(r, r.data.factor || 1);
-    return `<div class="row ${mine ? 'tap' : ''}" ${mine ? `onclick="openRecipe('${r.id}')"` : ''}><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${slotName(r.data.slot)} · ${(r.data.days || []).length ? r.data.days.map(d => WD[d]).join(' ') : 'kein Tag geplant'}</div></div><div class="k">${fmt(t.kcal)} kcal</div></div>`; }).join('') + '</div>';
-  h += '</div>';
   if (mine) h += `<div class="fbar"><button class="fsearch" onclick="openFoodSearch(false)">${I_SEARCH}<span>Lebensmittel suchen</span></button><button class="fscan" aria-label="Barcode scannen" onclick="openFoodSearch(true)">${I_SCAN}</button></div>`;
   return h;
 }
 function delLog(id){ softDel(id, S.logIdx?.[id]?.data.name || 'Eintrag'); }
+
+/* ================= Rezepte: Sammlung und Meine Rezepte ================= */
+// Sammlung aus daten/rezepte.json (nur lesen, offline über den Service Worker). Meine Rezepte = kind 'recipe'.
+let RZ = { seg: 'sammlung', cat: 'alle', data: null };
+async function loadSammlung(){
+  if (RZ.data) return RZ.data;
+  const res = await fetch('daten/rezepte.json'); if (!res.ok) throw new Error('Rezepte nicht geladen');
+  RZ.data = await res.json(); return RZ.data;
+}
+// Einheiten: Einzahl/Mehrzahl, damit „1 Dose“ und „2 Dosen“ als dieselbe Einheit gelten
+const UNIT_FORMS = [['Dose', 'Dosen'], ['Scheibe', 'Scheiben'], ['Filet', 'Filets'], ['Kopf', 'Köpfe'], ['Packung (400 g)', 'Packungen (400 g)'], ['Packung', 'Packungen'], ['Becher', 'Becher'], ['Stück', 'Stück'], ['TL', 'TL'], ['EL', 'EL'], ['g', 'g'], ['ml', 'ml']];
+const unitBase = u => { const f = UNIT_FORMS.find(x => x.includes(u)); return f ? f[0] : (u || ''); };
+const unitFor = (u, n) => { const f = UNIT_FORMS.find(x => x.includes(u)); return f ? (n === 1 ? f[0] : f[1]) : (u || ''); };
+// Rundung beim Skalieren: g/ml auf 5, alles andere (Stück, Dosen …) auf 0,5
+function roundQty(q, u){ const b = unitBase(u); if (b === 'g' || b === 'ml') return Math.max(5, Math.round(q / 5) * 5); return Math.max(0.5, Math.round(q * 2) / 2); }
+const qtyTxt = (q, u) => `${npFmt(q)} ${unitFor(u, q)}`;
+const rzTime = r => `${r.zeit_aktiv_min} min aktiv${r.zeit_gesamt_min > r.zeit_aktiv_min ? `, ${r.zeit_gesamt_min} min gesamt` : ''}`;
+const openRezepte = run(async seg => { if (seg) RZ.seg = seg; await loadSammlung().catch(() => null); await loadRecipes(); drawRezepte(); });
+function drawRezepte(){
+  const D = RZ.data, cats = [['alle', 'Alle'], ...Object.entries(D?.kategorien || {})];
+  let h = `<div class="sh-head rzhead"><span></span><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div><h2 class="rztitle">Rezepte</h2>
+    <div class="seg"><button class="${RZ.seg === 'sammlung' ? 'on' : ''}" onclick="RZ.seg='sammlung';drawRezepte()">Sammlung</button><button class="${RZ.seg === 'meine' ? 'on' : ''}" onclick="RZ.seg='meine';drawRezepte()">Meine Rezepte</button></div>`;
+  if (RZ.seg === 'sammlung'){
+    if (!D) h += '<div class="note">Die Sammlung ist gerade nicht verfügbar. Öffne die App einmal mit Internet.</div>';
+    else {
+      const list = D.rezepte.filter(r => RZ.cat === 'alle' || r.kategorie === RZ.cat);
+      h += `<div class="chiprow">${cats.map(([k, l]) => `<button class="${RZ.cat === k ? 'on' : ''}" onclick="RZ.cat='${k}';drawRezepte()">${esc(l)}</button>`).join('')}</div>
+        <div class="rzlh"><span class="lbl">${esc(RZ.cat === 'alle' ? 'Alle' : D.kategorien[RZ.cat])} · ${list.length} Rezepte</span><span class="small muted">Protein pro Portion</span></div>
+        <div class="list">${list.map(r => `<button class="row tap rzrow" onclick="drawRezept('${r.id}')"><div class="grow"><div class="rzn">${esc(r.name)}</div><div class="s">${r.zeit_aktiv_min} min aktiv · ${r.portionen} ${r.portionen === 1 ? 'Portion' : 'Portionen'}${r.tags.includes('vegetarisch') ? ' · vegetarisch' : ''}</div></div>
+          <div class="rzp"><b class="num n24">${r.pro_portion.protein} g</b><span>${fmt(r.pro_portion.kcal)} kcal</span></div></button>`).join('')}</div>`;
+    }
+  } else {
+    const recs = Object.values(S.rc).filter(r => r.user_id === S.user.id);
+    h += `<div class="sec-h" style="margin-top:16px"><span class="small muted">Weise Rezepten Wochentage zu, dann stehen sie unter Heute zum Abhaken.</span><button class="btn sm" onclick="openRecipe()">Neues Rezept</button></div>`;
+    h += recs.length ? '<div class="list">' + recs.map(r => { const t = recipeTotals(r, r.data.factor || 1);
+      return `<button class="row tap" onclick="openRecipe('${r.id}')"><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${slotName(r.data.slot)} · ${(r.data.days || []).length ? r.data.days.map(d => WD[d]).join(' ') : 'kein Tag geplant'}</div></div><div class="k">${fmt(t.kcal)} kcal</div></button>`; }).join('') + '</div>'
+      : '<div class="note">Noch keine eigenen Rezepte. Lege eins an oder übernimm eins aus der Sammlung.</div>';
+  }
+  h += '<div id="rzfoot"></div>';
+  openSheet(h); if (typeof rzFoot === 'function') rzFoot();
+}
+function drawRezept(id, n){
+  const r = RZ.data.rezepte.find(x => x.id === id); if (!r) return;
+  RZ.cur = { id, n: n || RZ.cur?.id === id && RZ.cur.n || r.portionen };
+  const k = RZ.cur.n / r.portionen, pp = r.pro_portion, mine = Object.values(S.rc).some(x => x.user_id === S.user.id && x.data.quelle === id);
+  openSheet(`<div class="amthead"><button class="tbtn" onclick="drawRezepte()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg> Sammlung</button>
+      <button class="tbtn" ${mine ? 'disabled' : ''} onclick="rzCopy('${id}')">${mine ? 'In meinen Rezepten' : 'In meine Rezepte'}</button></div>
+    <h2 class="rzname">${esc(r.name)}</h2><p class="small muted" style="margin:4px 0 16px">${esc(RZ.data.kategorien[r.kategorie] || '')} · ${rzTime(r)}${r.tags.length ? ' · ' + r.tags.map(esc).join(' · ') : ''}</p>
+    <div class="board rzboard"><div><div class="lbl">Protein / Portion</div><b class="num rzpn">${pp.protein}</b><span class="unit">g</span></div>
+      <div class="rzmac">${[['kcal', fmt(pp.kcal)], ['Carbs', pp.kohlenhydrate + ' g'], ['Fett', pp.fett + ' g']].map(([l, v]) => `<div><div class="lbl">${l}</div><b class="num n20">${v}</b></div>`).join('')}</div></div>
+    <div class="rzzh"><h3>Zutaten</h3><div class="stepper rzstep"><button aria-label="Eine Portion weniger" ${RZ.cur.n <= 1 ? 'disabled' : ''} onclick="drawRezept('${id}',${RZ.cur.n - 1})">−</button><b>${RZ.cur.n} ${RZ.cur.n === 1 ? 'Portion' : 'Portionen'}</b><button aria-label="Eine Portion mehr" ${RZ.cur.n >= 20 ? 'disabled' : ''} onclick="drawRezept('${id}',${RZ.cur.n + 1})">+</button></div></div>
+    <div class="list">${r.zutaten.map(z => `<div class="row rzz"><b class="rzq">${qtyTxt(roundQty(z.menge * k, z.einheit), z.einheit)}</b><span class="grow">${esc(z.name)}</span></div>`).join('')}</div>
+    <h3 style="margin:24px 0 8px">Zubereitung</h3><ol class="rzsteps">${r.schritte.map(st => `<li>${esc(st)}</li>`).join('')}</ol>
+    <div class="bbar rzbar"><span id="rzshop"></span><button class="btn accent" onclick="rzLog('${id}')">1 Portion eintragen</button></div>`);
+  if (typeof rzShopBtn === 'function') rzShopBtn(id);
+}
+// „1 Portion eintragen“: Mengen-Sheet in der Einheit Portion, Makros pro Portion aus der Sammlung
+function rzLog(id){
+  const r = RZ.data.rezepte.find(x => x.id === id), pp = r.pro_portion;
+  const g = r.zutaten.reduce((a, z) => a + z.gramm, 0) / r.portionen, per = { kcal: pp.kcal / g * 100, p: pp.protein / g * 100, c: pp.kohlenhydrate / g * 100, f: pp.fett / g * 100 };
+  P = { mode: 'log', slot: slotNow(), title: slotName(slotNow()), basket: [], tab: 'suche', results: [{ name: r.name, per, portion: g, unit: 'p', last: '' }], back: () => drawRezept(id), after: () => drawRezept(id) };
+  drawAmount(0);
+}
+// „In meine Rezepte“: Kopie im recipe-Format, Zutaten auf eine Portion umgerechnet, Nährwerte direkt je Zutat
+const rzCopy = run(async id => {
+  const r = RZ.data.rezepte.find(x => x.id === id);
+  const items = r.zutaten.map(z => ({ name: z.name, grams: r1(z.gramm / r.portionen), per: { kcal: z.pro_100g.kcal, p: z.pro_100g.protein, c: z.pro_100g.kohlenhydrate, f: z.pro_100g.fett } }));
+  await add('recipe', null, { name: r.name, slot: r.kategorie === 'fruehstueck' ? 'fruehstueck' : 'abend', items, days: [], factor: 1, quelle: id });
+  await loadRecipes(true); toast('In deinen Rezepten gespeichert'); drawRezept(id);
+});
 
 /* ---------- Lebensmittel-Auswahl mit Sammelkorb ---------- */
 let P = null;
@@ -1737,7 +1834,7 @@ function drawPicker(){
     const recs = Object.values(S.rc);
     h += recs.length ? '<div class="list">' + recs.map(r => { const t = recipeTotals(r, r.data.factor || 1);
       return `<button class="row tap frow" onclick="drawRecipeAmount('${r.id}')"><div class="grow"><div class="t">${esc(r.data.name)}</div><div class="s">${r.user_id === S.user.id ? 'Meine' : 'Von ' + esc(nameOf(S.partner))} · ${fmt(t.kcal)} kcal</div></div><span class="chev">${CHEV}</span></button>`; }).join('') + '</div>'
-      : '<div class="note">Noch keine Rezepte. Lege unter Essen eine Mahlzeiten-Vorlage an.</div>';
+      : '<div class="note">Noch keine Rezepte. Lege unter Essen → Rezepte eins an.</div>';
   }
   if (P.tab === 'eigen'){
     h += `<div id="pres"></div><div class="sec"><h3 class="sub">Neues Lebensmittel</h3><p class="small muted" style="margin-top:0">Nährwerte pro 100 g, z. B. von der Verpackung.</p>
@@ -1820,9 +1917,9 @@ const amtGrams = () => P.amt.unit === 'p' ? P.amt.v * P.amt.f.portion : P.amt.v;
 const amtGo = () => P.basket.length ? 'In den Korb' : 'Eintragen';
 function drawAmount(k){
   const f = P.results[k];
-  P.amt = { f, unit: 'g', v: r0(f.serving || f.portion || 100) };
+  P.amt = f.unit === 'p' && f.portion ? { f, unit: 'p', v: 1 } : { f, unit: 'g', v: r0(f.serving || f.portion || 100) };
   const per = f.per, last = f.last && f.serving ? r0(f.serving) : 0;
-  openSheet(`<div class="amthead"><button class="tbtn" onclick="npClose();drawPicker()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg> Zurück</button>${last ? `<span class="lbl">Zuletzt ${fmt(last)} g</span>` : ''}</div>
+  openSheet(`<div class="amthead"><button class="tbtn" onclick="npClose();(P.back||drawPicker)()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg> Zurück</button>${last ? `<span class="lbl">Zuletzt ${fmt(last)} g</span>` : ''}</div>
     <h3 class="amtname">${esc(f.name)}</h3><p class="small muted" style="margin:4px 0 16px">100 g · ${fmt(per.kcal)} kcal · ${fmt(per.p)} g Protein</p>
     <div class="amtrow"><button class="amtval" id="amtv" aria-label="Menge" onclick="amtPad()"></button>
       <div class="amtunit">${f.portion ? `<button class="${P.amt.unit === 'g' ? 'on' : ''}" onclick="amtUnit('g')">Gramm</button><button class="${P.amt.unit === 'p' ? 'on' : ''}" onclick="amtUnit('p')">Portion ${fmt(f.portion)} g</button>` : '<span>Gramm</span>'}</div></div>
@@ -1847,7 +1944,9 @@ const amtSave = run(async () => {
   npClose();
   if (P.basket.length){ basketAdd({ ...f, serving: g }, true); drawPicker(); return; }
   await add('log', S.day, { slot: P.slot, name: f.name, grams: g, per: f.per, ...roundN(scale(f.per, g)) });
-  S.openSlot = P.slot; toast(`${f.name}: ${fmt(g)} g eingetragen`); P.lib = null; drawPicker(); render();
+  S.openSlot = P.slot; toast(`${f.name}: ${P.amt.unit === 'p' ? npFmt(P.amt.v) + (P.amt.v === 1 ? ' Portion' : ' Portionen') : fmt(g) + ' g'} eingetragen`);
+  if (P.after){ P.after(); render(); return; }
+  P.lib = null; drawPicker(); render();
   P.lib = await loadLib(); if (P.tab === 'suche' && !P.q) showLib();
 });
 function basketAdd(food, silent){
@@ -1914,7 +2013,7 @@ const saveQuick = run(async () => {
 function drawRecipeAmount(id){
   const r = S.rc[id];
   openSheet(`<div class="sh-head"><h3>${esc(r.data.name)}</h3><button class="btn sm ghost" onclick="drawPicker()">Zurück</button></div>
-    <div class="f"><span>Portion (1 = wie in der Vorlage)</span><button class="nf nfbig" id="rf" aria-label="Portion" onclick="rfPad('${id}')">${npFmt(r.user_id === S.user.id ? (r.data.factor || 1) : 1)}</button></div>
+    <div class="f"><span>Portion (1 = wie im Rezept)</span><button class="nf nfbig" id="rf" aria-label="Portion" onclick="rfPad('${id}')">${npFmt(r.user_id === S.user.id ? (r.data.factor || 1) : 1)}</button></div>
     <div class="card" id="aprev"></div>
     <div class="btns"><button class="btn accent full" onclick="logRecipe('${id}')">Eintragen</button></div>`);
   rPrev(id); rfPad(id);
@@ -1925,7 +2024,7 @@ function rPrev(id){ const t = recipeTotals(S.rc[id], num($('#rf').textContent));
 const logRecipe = run(async id => {
   const r = S.rc[id], f = num($('#rf').textContent) || 1; npClose();
   await add('log', S.day, { slot: P.slot, name: r.data.name, recipe_id: r.user_id === S.user.id ? id : null, factor: f, ...roundN(recipeTotals(r, f)) });
-  if (P.basket.length){ toast('Vorlage gespeichert. Der Korb ist noch offen.'); drawBasket(); return; }
+  if (P.basket.length){ toast('Rezept eingetragen. Der Korb ist noch offen.'); drawBasket(); return; }
   closeSheet(); toast('Hinzugefügt'); render();
 });
 
@@ -1966,9 +2065,9 @@ async function lookupCode(code){
   }
 }
 
-/* ---------- Vorlagen-Editor ---------- */
+/* ---------- Rezept-Editor (Meine Rezepte) ---------- */
 let R = null;
-function openRecipe(id){
+function openRecipe(id){ RZ.back = sheetOpen();
   const r = id ? S.rc[id] : null;
   R = r ? { id, ...JSON.parse(JSON.stringify(r.data)) } : { name:'', slot:'mittag', items:[], days:[], factor:1 };
   drawRecipe();
@@ -1976,7 +2075,7 @@ function openRecipe(id){
 function drawRecipe(){
   stopScan();
   const t = recipeTotals(R, 1);
-  openSheet(`<div class="sh-head"><h3>${R.id ? 'Vorlage bearbeiten' : 'Neue Vorlage'}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
+  openSheet(`<div class="sh-head"><h3>${R.id ? 'Rezept bearbeiten' : 'Neues Rezept'}</h3><button class="btn sm ghost" onclick="closeSheet()">Schließen</button></div>
     <label class="f"><span>Name</span><input value="${esc(R.name)}" oninput="R.name=this.value" placeholder="z. B. Skyr-Bowl"></label>
     <label class="f"><span>Mahlzeit</span><select onchange="R.slot=this.value">${SLOTS.map(([k, l]) => `<option value="${k}" ${R.slot === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
     <div class="f"><span>Geplant an</span></div>
@@ -1985,16 +2084,16 @@ function drawRecipe(){
     <div class="sec-h"><h3 class="sub" style="margin:0">Zutaten</h3><span class="muted small">${fmt(t.kcal)} kcal, P ${fmt(t.p)} g</span></div>
     <div class="list">${R.items.map((it, i) => `<div class="row"><div class="grow"><div class="t">${esc(it.name)}</div><div class="s">${fmt(it.grams)} g, ${fmt(scale(it.per, it.grams).kcal)} kcal</div></div><button class="iconbtn" aria-label="Zutat entfernen" onclick="R.items.splice(${i},1);drawRecipe()">×</button></div>`).join('')}
     <div class="row"><button class="btn sm ghost" onclick="openPicker({mode:'recipe',title:'Zutat hinzufügen'})">+ Zutat hinzufügen</button></div></div>
-    <div class="btns"><button class="btn" style="flex:1" onclick="saveRecipe()">Vorlage speichern</button>${R.id ? `<button class="btn danger" onclick="deleteRecipe()">Löschen</button>` : ''}</div>`);
+    <div class="btns"><button class="btn" style="flex:1" onclick="saveRecipe()">Rezept speichern</button>${R.id ? `<button class="btn danger" onclick="deleteRecipe()">Löschen</button>` : ''}</div>`);
 }
 const saveRecipe = run(async () => {
-  if (!R.name.trim()) return toast('Gib der Vorlage einen Namen');
+  if (!R.name.trim()) return toast('Gib dem Rezept einen Namen');
   if (!R.items.length) return toast('Füge mindestens eine Zutat hinzu');
-  const data = { name: R.name.trim(), slot: R.slot, items: R.items, days: R.days.sort(), factor: R.factor || 1 };
+  const data = { name: R.name.trim(), slot: R.slot, items: R.items, days: R.days.sort(), factor: R.factor || 1, ...(R.quelle ? { quelle: R.quelle } : {}) };
   if (R.id) await upd(R.id, data); else await add('recipe', null, data);
-  closeSheet(); toast('Vorlage gespeichert'); render();
+  closeSheet(); toast('Rezept gespeichert'); if (RZ.back){ RZ.back = false; openRezepte('meine'); } render();
 });
-const deleteRecipe = run(async () => { if (!confirm('Vorlage löschen?')) return; await del(R.id); closeSheet(); render(); });
+const deleteRecipe = run(async () => { if (!confirm('Rezept löschen?')) return; await del(R.id); closeSheet(); render(); });
 
 /* ================= Training ================= */
 const isWork = s => !s.warm; // Aufwärmsätze zählen nicht für Volumen, Bestwerte, XP und Übungsfortschritt

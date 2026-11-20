@@ -149,7 +149,7 @@ def flow_essen_korb(ctx):
     shot(pg, 'essen'); bottom_free(pg, 'Essen')
     check(pg.query_selector('.fbar .fscan') is not None, 'Suche und Scan unten')
     check(pg.query_selector('.mshare >> text=Übernehmen') is not None, 'Vorschlag sitzt in der Mahlzeit')
-    check('0 kcal' != pg.inner_text('.sec .list .row .k >> nth=0').strip(), 'Vorlage zeigt Kalorien')
+
     pg.click('.mplus >> nth=0'); pg.wait_for_timeout(600)
     pg.click('.qplus >> nth=0'); pg.click('.qplus >> nth=1'); pg.wait_for_timeout(200)
     check(pg.query_selector('.bbar') is not None, 'Korbleiste erscheint')
@@ -296,6 +296,38 @@ def flow_off_suche(ctx):
         try: r.abort()
         except Exception: pass
     pg.unroute('**/cgi/search.pl*'); ctx.set_offline(False); close(pg); return pg
+
+def flow_rezepte(ctx):
+    pg = open_app(ctx)
+    pg.click('#tabs >> text=Essen'); pg.wait_for_timeout(400)
+    check(pg.query_selector('#hact >> text=Rezepte') is not None and pg.query_selector('.sec-h >> text=Mahlzeiten-Vorlagen') is None, 'Essen-Kopf: „Rezepte“, Vorlagen-Abschnitt entfernt')
+    pg.click('#hact >> text=Rezepte'); pg.wait_for_timeout(600); shot(pg, 'rezepte_sammlung')
+    check(len(pg.query_selector_all('.rzrow')) == 12, 'Sammlung: 12 Rezepte')
+    pg.click('.chiprow >> text=Mealprep'); pg.wait_for_timeout(200)
+    check(len(pg.query_selector_all('.rzrow')) == 4 and 'MEALPREP · 4 REZEPTE' in pg.inner_text('.rzlh').upper(), 'Filter Mealprep: 4 Rezepte')
+    check('vegetarisch' in pg.inner_text('.rzrow >> nth=3') and pg.inner_text('.rzrow >> nth=0 >> .rzp .num') == '43 g', 'Zeile: vegetarisch, Protein pro Portion')
+    pg.click('.rzrow >> nth=0'); pg.wait_for_timeout(300); shot(pg, 'rezept')
+    q = lambda: pg.eval_on_selector_all('.rzq', 'els => els.map(e => e.textContent)')
+    check(q()[:2] == ['500 g', '2 Dosen'] and '4 Portionen' in pg.inner_text('.rzstep'), 'Rezept: Mengen für 4 Portionen')
+    pg.click('[aria-label="Eine Portion mehr"]'); pg.wait_for_timeout(100)
+    check(q()[:3] == ['625 g', '2,5 Dosen', '1,5 Dosen'] and q()[7] == '2,5 TL', 'Portionen skalieren, Rundung g auf 5, Stück/Dosen auf 0,5')
+    for k in range(4): pg.click('[aria-label="Eine Portion weniger"]')
+    check(q()[:3] == ['125 g', '0,5 Dosen', '0,5 Dosen'] and q()[4] == '0,5 Stück', '1 Portion: kleine Mengen')
+    check(len(pg.query_selector_all('.rzsteps li')) > 2, 'Zubereitung als Schritte')
+    pg.click('text=1 Portion eintragen'); pg.wait_for_timeout(300)
+    check('Portion' in pg.inner_text('.amtval') and pg.inner_text('#npgo') == 'Eintragen' and pg.inner_text('#aprev .num >> nth=0') == '632', 'Mengen-Sheet in Portion, 632 kcal aus der Sammlung')
+    check(pg.query_selector('[aria-label="0,5 mehr"]') is not None, 'Schritt 0,5 Portion')
+    pg.click('#npgo'); pg.wait_for_timeout(600)
+    check('eingetragen' in toast(pg) and pg.query_selector('.rzname') is not None, 'Eintragen, zurück zum Rezept')
+    k = pg.evaluate("(async()=>{const l=await q('log',S.user.id,today(),today());return l.find(x=>x.data.name.startsWith('Chili'))?.data.kcal})()")
+    check(abs(k - 632) <= 3, 'Eintrag mit kcal pro Portion')
+    pg.click('text=In meine Rezepte'); pg.wait_for_timeout(500)
+    rc = pg.evaluate("Object.values(S.rc).find(r=>r.data.quelle==='chili-pute')?.data")
+    check(rc and rc['factor'] == 1 and rc['slot'] == 'abend' and rc['items'][0]['grams'] == 125 and abs(sum(i['per']['kcal']*i['grams']/100 for i in rc['items']) - 632) < 2, 'In meine Rezepte: Kopie pro Portion, Nährwerte je Zutat')
+    check(pg.is_disabled('text=In meinen Rezepten'), 'Bereits übernommen')
+    pg.click('text=Sammlung'); pg.wait_for_timeout(200); pg.click('.seg >> text=Meine Rezepte'); pg.wait_for_timeout(300)
+    check(pg.query_selector('.row >> text=Chili con Carne') is not None and '0 kcal' not in pg.inner_text('#sheetBody .list .k >> nth=0'), 'Meine Rezepte: Kopie mit Kalorien')
+    return pg
 
 def flow_essen_teilen(ctx):
     pg = open_app(ctx)
@@ -634,7 +666,8 @@ def flow_umbruch(ctx):
       ('editor', "openRoutine('r1')"), ('profil', "S.tab='profil';render()"), ('level', "openGame()"), ('rechner', "openCalc()"),
       ('kalender', "S.tab='heute';S.day=today();render().then(()=>openCalendar())"), ('zahlenfeld', "startWorkout('r1').then(()=>setTimeout(()=>npSet(0,0,'kg'),300))"),
       ('menge', "openPicker({mode:'log',slot:'mittag',title:'Mittagessen'}).then(()=>drawAmount(1))"), ('gewicht', "S.tab='koerper';render().then(()=>openWeight())"),
-      ('masse', "openMeasure()"), ('rueckgaengig', "S.tab='essen';render().then(()=>undoBar('Hähnchen-Reis-Bowl mit Gemüse gelöscht',null,null))")]
+      ('masse', "openMeasure()"), ('rezepte', "S.tab='essen';render().then(()=>openRezepte('sammlung'))"), ('rezept', "openRezepte('sammlung').then(()=>drawRezept('chili-pute'))"),
+      ('einheit_fortschritt', "S.tab='training';render().then(()=>openWo(Object.keys(S.wos).at(-1)))"), ('rueckgaengig', "S.tab='essen';render().then(()=>undoBar('Hähnchen-Reis-Bowl mit Gemüse gelöscht',null,null))")]
     pg.evaluate("S.day=addDays(today(),-3);S.tab='heute';render()"); pg.wait_for_timeout(500)
     check('Ganzkörper A' in pg.inner_text('.tile .tname'), 'Kachel zeigt langen Trainingsnamen')
     for w, h in [(390, 844), (375, 667)]:
@@ -685,7 +718,7 @@ def flow_hell_dunkel(ctx):
         shot(pg, f'theme_{t}')
     return pg
 
-FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
+FLOWS = [flow_start_changelog, flow_heute, flow_heute_faelle, flow_kalender, flow_essen_korb, flow_suche, flow_menge, flow_rueckgaengig, flow_off_suche, flow_rezepte, flow_essen_teilen, flow_training, flow_start_von_heute, flow_aufwaermen, flow_steigerung, flow_als_naechstes, flow_zahlenfeld, flow_satz_loeschen, flow_fortschritt, flow_ziel, flow_dran,
          flow_partneransicht, flow_offline_sync, flow_koerper, flow_profil, flow_bewegung, flow_umbruch, flow_trend, flow_hell_dunkel]
 
 def main():
