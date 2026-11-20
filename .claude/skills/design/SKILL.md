@@ -80,6 +80,9 @@ Kopf: Name 30 px (`.wtitle`), „Mi, 14. Okt · 52 min“, „Schließen“. `.b
 - Sammlung: Segment Sammlung | Meine Rezepte, Filter als `.chiprow`, Zeilen `.rzrow` ≥ 72 px (Name 15 px/800, darf zweizeilig sein), rechts Protein `.num` 24 px + kcal 12 px. Schwebender Button unten (`#rzfoot`).
 - Rezept: Name 26 px, `.board` „Protein / Portion“ 56 px + kcal/Carbs/Fett, Portionen-Stepper `.rzstep`, Zutaten 44 px mit Menge in fester Spalte 92 px (`.rzq`, nowrap). Mengen: g/ml auf 5, alles andere auf 0,5 gerundet, Einheit Einzahl/Mehrzahl über `unitFor`.
 - Einkaufsliste: Titel 36 px, Zeilen 50 px als `role="checkbox"` (`.shrow`), Kästchen 28 px (erledigt `--accent` mit Haken), Menge rechts, Kürzel wer: „Du“ auf `--soft`, Partner-Initiale weiß auf `--partner-fill` (#076A9F). Erledigte durchgestrichen in `--muted`, ans Gruppenende. Gruppen nach Abteilung mit `.lbl`.
+- Einkaufsliste ab 1.7.1: jede Zeile hat zwei Tippflächen – Kästchen `.shhit` (44 × 44 px, `role="checkbox"`) hakt ab, der Rest `.shmain` öffnet „Eintrag bearbeiten“ (Name 24 px, „Von Lena · aus Chili con Carne“, Menge mit −/+ 44 px: g/ml ±50, sonst ±1; bei 0 wird „Speichern“ zu „Löschen“; „Von der Liste löschen“ in `--warn`).
+- Zutatenauswahl „Auf die Einkaufsliste“: Zeilen ≥ 52 px als Checkbox (Kästchen 28 px), „Vorrat“ (12 px, `--muted`), Hinweis „+ 2 Stück schon auf der Liste“ in `--mine`, Button „Alle“/„Keine“, unten `.btn.accent` „6 Zutaten übernehmen“ (deaktiviert bei 0).
+- **Zweite Ebene über einem Sheet:** `overlay(html, label)` bzw. `actionMenu(title, items)` (unten angedockt, Hintergrund abgedunkelt). Beim Neuzeichnen mit gleichem `label` wird nur der Inhalt getauscht (keine erneute Animation, Scrollposition bleibt).
 - Sticky-Leisten in Sheets müssen **direkte Kinder** von `.sheet-card` sein (sonst kleben sie nur in ihrem eigenen Container).
 
 ### Trend-Diagramm (Körper)

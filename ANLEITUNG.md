@@ -8,6 +8,10 @@ Nach jedem Update die App einmal mit Internet öffnen, damit die neue Version ge
 - **Einkaufsliste**: Im Rezept „Auf Einkaufsliste“ setzt alle Zutaten in der gewählten Portionenzahl auf eure gemeinsame Liste. Gleiche Zutaten werden zusammengerechnet. Du öffnest die Liste über den Einkaufswagen unter Essen oder unten in der Sammlung. Tippe eine Zeile an, um sie abzuhaken; „Du“ bzw. der Anfangsbuchstabe deines Partners zeigt, wer sie eingepackt hat. Oben rechts im Menü: „Erledigte entfernen“ und „Liste leeren“, jeweils mit Rückgängig. Funktioniert auch offline.
 - **Fortschritt**: Tippe unter Training auf eine Einheit. Oben steht, wie viele Übungen du verbessert hast (mehr Gewicht oder bei gleichem Gewicht mehr Wiederholungen), mit „vorher → jetzt“. Aufwärmsätze zählen nicht, die erste Einheit einer Übung auch nicht. Ab jetzt wird auch die Dauer gespeichert.
 - **Suche**: Deine eigenen und zuletzt genutzten Lebensmittel stehen zuerst, danach beliebte Produkte aus Deutschland. Antwortet die Datenbank nicht innerhalb von 6 Sekunden, steht ein Hinweis da; scanne dann den Barcode.
+- **Hotfix 1.7.1**:
+  - „Auf Einkaufsliste“ zeigt erst alle Zutaten. Wähle ab, was du schon hast; Vorräte wie Reis oder Öl sind vorab abgewählt, und du siehst, was schon auf der Liste steht.
+  - Tippe in der Einkaufsliste auf einen Eintrag, um die Menge zu ändern oder ihn zu löschen. Das Kästchen hakt weiterhin ab.
+  - Änderungen und Löschungen gelten für euch beide, auch bei Einträgen deines Partners.
 
 **Neu in 1.6.1.1**: Sätze löschst du über einen Tipp auf die Satznummer („W“, „1“, „2“ …) und „Satz löschen“, mit Rückgängig. Die Trendlinie unter Körper erscheint schon ab 3 Wiegungen.
 
